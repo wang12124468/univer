@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import canUseDom from 'rc-util/lib/Dom/canUseDom';
 
 import type { Nullable } from '@univerjs/core';
@@ -33,17 +33,17 @@ import { useEvent } from './event';
  * @param container
  */
 export function useScrollYOverContainer(element: Nullable<HTMLElement>, container: Nullable<HTMLElement>) {
-    const initialRectRef = useRef({
-        width: 0,
-        height: 0,
-    });
     const updater = useEvent(() => {
         if (!element || !container) {
             return;
         }
+        const elRect = element.getBoundingClientRect();
+
+        if (elRect.bottom < 0) {
+            return;
+        }
 
         const elStyle = element.style;
-        const elRect = element.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
         if (elRect.y < 0 && elRect.y + elRect.height <= 0) {
             /* The element is hidden in viewport */
@@ -56,11 +56,10 @@ export function useScrollYOverContainer(element: Nullable<HTMLElement>, containe
             return;
         }
 
-        const relativeY = elRect.y - containerRect.y;
-
-        const initialHeight = initialRectRef.current?.height || 0;
-
-        if (containerRect.height >= relativeY + initialHeight) {
+        const relativeY = Math.abs(elRect.y - containerRect.y);
+        const scrolled = element.scrollHeight > element.clientHeight;
+        // element height less than container height and not scroll bar
+        if (containerRect.height >= relativeY + elRect.height && !scrolled) {
             elStyle.overflowY = '';
             elStyle.maxHeight = '';
         } else {
@@ -74,10 +73,6 @@ export function useScrollYOverContainer(element: Nullable<HTMLElement>, containe
             return;
         }
         const rect = element.getBoundingClientRect();
-        initialRectRef.current = {
-            width: rect.width,
-            height: rect.height,
-        };
 
         updater();
 
