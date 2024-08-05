@@ -15,7 +15,7 @@
  */
 
 import { type IDrawingParam, type IImageData, type IRotationSkewFlipTransform, type IUnitDrawingService, UnitDrawingService } from '@univerjs/drawing';
-import type { Serializable } from '@univerjs/core';
+import type { IUnitRange, IUnitRangeWithName, Serializable } from '@univerjs/core';
 import { createIdentifier } from '@univerjs/core';
 
 interface ICellPosition {
@@ -60,10 +60,14 @@ export interface IFloatDomData extends IDrawingParam {
 // TODO@wzhudev: this shouldn't be here. It should be in the sheets package
 export interface ISheetFloatDom extends IFloatDomData, ISheetDrawingBase {}
 
-export type ISheetDrawing = ISheetImage | ISheetShape | ISheetFloatDom;
+export interface ISheetAIChart extends ISheetFloatDom {
+    dataRange: IUnitRangeWithName;
+}
+
+export type ISheetDrawing = ISheetImage | ISheetShape | ISheetFloatDom | ISheetAIChart;
 
 type OptionalField<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-export type ISheetUpdateDrawing = OptionalField<ISheetImage | ISheetShape, 'sheetTransform'>;
+export type ISheetUpdateDrawing = OptionalField<ISheetDrawing, 'sheetTransform'>;
 
 export class SheetDrawingService extends UnitDrawingService<ISheetDrawing> {}
 
