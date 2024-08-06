@@ -25,6 +25,7 @@ export interface ISidebarMethodOptions {
     visible?: boolean;
 
     width?: number | string;
+    bodyStyle?: React.CSSProperties;
 
     onClose?: () => void;
     onOpen?: () => void;
