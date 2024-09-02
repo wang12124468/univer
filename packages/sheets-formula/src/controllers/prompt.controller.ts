@@ -145,7 +145,15 @@ export class PromptController extends Disposable {
      * SeqenceNodes are content in the formula editor.
      * previousSequenceNodes are content in the formula editor before the user starts to edit.
      */
-    private _previousSequenceNodes: Nullable<Array<string | ISequenceNode>>;
+    private _prevSeqNodes: Nullable<Array<string | ISequenceNode>>;
+    private get _previousSequenceNodes() {
+        return this._prevSeqNodes;
+    }
+
+    private set _previousSequenceNodes(value) {
+        this._prevSeqNodes = value;
+    }
+
     /**
      */
     private _currRangesCount: number = 0;
@@ -490,8 +498,7 @@ export class PromptController extends Disposable {
         // mousedown on a cell will start a new ref seleciton --> _addMoreRefSelection
         // then drag on spreadsheet, would update(replace) curr ref selection --> _insertControlSelectionReplace
         // Expection: if selections is the first ref selection, --> _insertControlSelectionReplace
-        const isUpdateCurrSelectionSeq = (selections.length === this._currRangesCount || this._currRangesCount === 0) &&
-            this._previousSequenceNodes != null;
+        const isUpdateCurrSelectionSeq = (selections.length === this._currRangesCount) && this._previousSequenceNodes != null;
         if (isUpdateCurrSelectionSeq) {
             this._updateAndReplaceRefSelection(currentSelection);
         } else {
@@ -863,7 +870,6 @@ export class PromptController extends Disposable {
             const lastSequenceNodes =
                 this._lexerTreeBuilder.sequenceNodesBuilder(config.dataStream) ||
                 [];
-
             this._previousSequenceNodes = lastSequenceNodes;//this._formulaPromptService.getSequenceNodes();
             let selectionLen = 0;
             lastSequenceNodes.forEach((node) => {
