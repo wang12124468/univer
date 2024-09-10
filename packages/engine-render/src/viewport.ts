@@ -274,6 +274,17 @@ export class Viewport {
             this._mainCanvasResizeHandler();
         });
         this._mainCanvasResizeHandler();
+
+        let wheelTimeout = 0;
+        this.onMouseWheel$.subscribeEvent((e) => {
+            if(this.viewportKey == 'viewMain' ){
+
+                clearTimeout(wheelTimeout);
+                wheelTimeout = setTimeout(() => {
+                    console.log('wheelend -->-->-->-->-->-->-->-->-->-->-->-->')
+                }, 50); // 150 毫秒后触发 wheelend 事件
+            }
+        })
     }
 
     initCacheCanvas(props?: IViewProps) {
@@ -734,13 +745,11 @@ export class Viewport {
         if (viewportScrollX !== undefined) {
             this._preViewportScrollX = this.viewportScrollX;
             this.viewportScrollX = viewportScrollX;
-            // this._deltaViewportScrollX = viewportScrollX - this._preViewportScrollX;
         }
 
         if (viewportScrollY !== undefined) {
             this._preViewportScrollY = this.viewportScrollY;
             this.viewportScrollY = viewportScrollY;
-            // this._deltaViewportScrollY = viewportScrollY - this._preViewportScrollY;
         }
         return this;
     }
@@ -1349,7 +1358,6 @@ export class Viewport {
 
     private _emitScrollEnd$(scrollSubParam: IScrollObserverParam) {
         clearTimeout(this._scrollStopNum);
-        console.log('emitScrollEnd$');
         this._scrollStopNum = setTimeout(() => {
             this.onScrollEnd$.emitEvent({
                 rawScrollX: scrollSubParam.rawScrollX,
@@ -1363,7 +1371,7 @@ export class Viewport {
                 limitY: this._scrollBar?.limitY,
                 isTrigger: false,
             });
-        }, 16);
+        }, 2);
     }
 
     /**
@@ -1446,9 +1454,7 @@ export class Viewport {
         this.scrollY = scrollY;
         this.viewportScrollX = viewportScrollX;
         this.viewportScrollY = viewportScrollY;
-
-        console.log('viewportScrollY', viewportScrollY, 'delta', this._deltaViewportScrollY);
-
+        console.log('deltaXY', this.viewportKey, this.viewportScrollY, this._deltaViewportScrollY)
         const scrollSubParam: IScrollObserverParam = {
             isTrigger,
             viewport: this,

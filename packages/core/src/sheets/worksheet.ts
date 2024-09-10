@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import type { IObjectMatrixPrimitiveType, Nullable } from '../shared';
 import { ObjectMatrix, Rectangle, Tools } from '../shared';
 import { createRowColIter } from '../shared/row-col-iter';
 import { type BooleanNumber, CellValueType } from '../types/enum';
@@ -22,9 +21,10 @@ import { ColumnManager } from './column-manager';
 import { Range } from './range';
 import { RowManager } from './row-manager';
 import { mergeWorksheetSnapshotWithDefault } from './sheet-snapshot-utils';
+import { SheetViewModel } from './view-model';
+import type { IObjectMatrixPrimitiveType, Nullable } from '../shared';
 import type { Styles } from './styles';
 import type { ICellData, ICellDataForSheetInterceptor, IFreeze, IRange, IWorksheetData } from './typedef';
-import { SheetViewModel } from './view-model';
 
 /**
  * The model of a Worksheet.
@@ -54,8 +54,6 @@ export class Worksheet {
         this._viewModel = new SheetViewModel((row, col) => this.getCellRaw(row, col));
         this._rowManager = new RowManager(this._snapshot, this._viewModel, rowData);
         this._columnManager = new ColumnManager(this._snapshot, columnData);
-
-        window.ws = this; // for debug
     }
 
     /**
@@ -240,7 +238,6 @@ export class Worksheet {
         return null;
     }
 
-    _cellDataCacheMap: Map<number, Map<number, Nullable<ICellDataForSheetInterceptor>>> = new Map();
     /**
      * Get cellData, includes cellData, customRender, markers, dataValidate, etc.
      *
@@ -255,17 +252,8 @@ export class Worksheet {
         if (row < 0 || col < 0) {
             return null;
         }
-        if (this._cellDataCacheMap.get(row)) {
-            if (!this._cellDataCacheMap.get(row)?.get(col)) {
-                this._cellDataCacheMap.get(row)?.set(col, this._viewModel.getCell(row, col));
-                // return this._cellDataCacheMap.get(row)?.get(col);
-            }
-        } else {
-            this._cellDataCacheMap.set(row, new Map());
-            this._cellDataCacheMap.get(row)?.set(col, this._viewModel.getCell(row, col));
-            // return this._cellDataCacheMap.get(row)?.get(col);
-        }
-        return this._cellDataCacheMap.get(row)?.get(col);
+
+        return this._viewModel.getCell(row, col);
     }
 
     getCellRaw(row: number, col: number): Nullable<ICellData> {
@@ -474,24 +462,22 @@ export class Worksheet {
         return this.getRowManager().getRowHeight(row);
     }
 
-    _filteredRowCacheMap: Map<number, boolean> = new Map();
+    /**
+     * Row is filtered out, that means this row is invisible.
+     * @param row
+     * @returns {boolean} is row hidden by filter
+     */
+    isRowFiltered(row: number): boolean {
+        return this._viewModel.getRowFiltered(row);
+    }
+
     /**
      * Get if the row is visible. It may be affected by features like filter and view.
      * @param row the row index
-     * @returns if the row in visible to the user
+     * @returns {boolean} if the row in visible to the user
      */
     getRowVisible(row: number): boolean {
-        return row <= 2732 && row >= 2727;
-        if (!this._filteredRowCacheMap.has(row)) {
-            this._filteredRowCacheMap.set(row, this._viewModel.getRowFiltered(row));
-        }
-        const filtered = this._filteredRowCacheMap.get(row);
-        if (filtered) return false;
-        return this.getRowRawVisible(row);
-    }
-
-    clearFilteredRowCacheMap() {
-        this._filteredRowCacheMap.clear();
+        return !this.isRowFiltered(row) && this.getRowRawVisible(row);
     }
 
     /**
