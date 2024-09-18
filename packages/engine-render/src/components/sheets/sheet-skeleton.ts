@@ -263,8 +263,8 @@ export class SpreadsheetSkeleton extends Skeleton {
     private _stylesCache: IStylesCache = {
         background: {},
         backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
-        font: {},
-        fontMatrix: new ObjectMatrix<any>(),
+        font: {} as Record<string, ObjectMatrix<IFontCacheItem>>,
+        fontMatrix: new ObjectMatrix<IFontCacheItem>(),
         border: new ObjectMatrix<BorderCache>(),
     };
 
@@ -366,13 +366,18 @@ export class SpreadsheetSkeleton extends Skeleton {
         this._columnTotalWidth = 0;
         this._rowHeaderWidth = 0;
         this._columnHeaderHeight = 0;
-        this._rowColumnSegment = null as any;
+        this._rowColumnSegment = {
+            startRow: -1,
+            endRow: -1,
+            startColumn: -1,
+            endColumn: -1,
+        };
         // this._dataMergeCache = [];
         this._stylesCache = {
             background: {},
             backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
-            font: {},
-            fontMatrix: new ObjectMatrix<any>(),
+            font: {} as Record<string, ObjectMatrix<IFontCacheItem>>,
+            fontMatrix: new ObjectMatrix<IFontCacheItem>(),
             border: new ObjectMatrix<BorderCache>(),
         };
         this._cellBgAndBorderCache = null as unknown as ObjectMatrix<boolean>;
@@ -1722,20 +1727,11 @@ export class SpreadsheetSkeleton extends Skeleton {
         };
         this._cellBgAndBorderCache = new ObjectMatrix<boolean>();
         this._overflowCache.reset();
-        this.worksheet.cellCache.reset();
     }
 
     private _makeDocumentSkeletonDirty(row: number, col: number): void {
         if (this._stylesCache.fontMatrix == null) return;
         this._stylesCache.fontMatrix.getValue(row, col)?.documentSkeleton.makeDirty(true); ;
-        // const keys = Object.keys(this._stylesCache.font);
-        // for (const fontString of keys) {
-        //     const fontCache = this._stylesCache.font![fontString];
-        //     if (fontCache != null && fontCache.getValue(r, c)) {
-        //         fontCache.getValue(r, c).documentSkeleton.makeDirty(true);
-        //         return;
-        //     }
-        // }
     }
 
     /**

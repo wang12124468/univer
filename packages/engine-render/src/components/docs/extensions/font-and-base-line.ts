@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import type { IScale } from '@univerjs/core';
 import { BaselineOffset, getColorStyle } from '@univerjs/core';
+import type { IScale } from '@univerjs/core';
 
 import { GlyphType, hasCJK } from '../../../basics';
 import { COLOR_BLACK_RGB } from '../../../basics/const';
-import type { IDocumentSkeletonGlyph } from '../../../basics/i-document-skeleton-cached';
 import { Vector2 } from '../../../basics/vector2';
-import type { UniverRenderingContext } from '../../../context';
+import { Checkbox } from '../../../shape';
 import { DocumentsSpanAndLineExtensionRegistry } from '../../extension';
 import { docExtension } from '../doc-extension';
-import { Checkbox } from '../../../shape';
+import type { IDocumentSkeletonGlyph } from '../../../basics/i-document-skeleton-cached';
+import type { UniverRenderingContext } from '../../../context';
 
 const UNIQUE_KEY = 'DefaultDocsFontAndBaseLineExtension';
 
