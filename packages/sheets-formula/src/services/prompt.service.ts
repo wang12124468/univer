@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import type { Direction, IDisposable } from '@univerjs/core';
-import { type IFunctionInfo, type ISequenceNode, sequenceNodeType } from '@univerjs/engine-formula';
 import { createIdentifier, IContextService } from '@univerjs/core';
-import type { Observable } from 'rxjs';
+import { type IFunctionInfo, type ISequenceNode, sequenceNodeType } from '@univerjs/engine-formula';
 import { Subject } from 'rxjs';
+import type { Direction, IDisposable } from '@univerjs/core';
+import type { Observable } from 'rxjs';
 
 import type { ISearchItem } from './description.service';
 

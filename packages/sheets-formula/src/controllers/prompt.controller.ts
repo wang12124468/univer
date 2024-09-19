@@ -194,7 +194,7 @@ export class PromptController extends Disposable {
         @ILayoutService private readonly _layoutService: ILayoutService
     ) {
         super();
-
+        window.pc = this;
         this._initialize();
     }
 
@@ -254,6 +254,8 @@ export class PromptController extends Disposable {
 
     private _initialCursorSync() {
         this.disposeWithMe(
+
+            // core-editing.mutation.ts docSelectionManagerService.replaceTextRanges
             this._docSelectionManagerService.textSelection$.subscribe((params) => {
                 if (params?.unitId == null) {
                     return;
@@ -1221,6 +1223,7 @@ export class PromptController extends Disposable {
         canUndo: boolean = true,
         fromSelection = true
     ) {
+        console.log('syncToEditor', sequenceNodes);
         let dataStream = generateStringWithSequence(sequenceNodes);
         const { textRuns, refSelections } = this._buildTextRuns(sequenceNodes);
         this._isSelectionMovingRefSelections = refSelections;
