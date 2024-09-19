@@ -269,7 +269,8 @@ export class SpreadsheetSkeleton extends Skeleton {
     };
 
     /** A matrix to store if a (row, column) position has render cache. */
-    private _cellBgAndBorderCache = new ObjectMatrix<boolean>();
+    private _cellBgCacheMatrix = new ObjectMatrix<boolean>();
+    private _cellBorderCacheMatrix = new ObjectMatrix<boolean>();
 
     private _showGridlines: BooleanNumber = BooleanNumber.TRUE;
 
@@ -380,7 +381,8 @@ export class SpreadsheetSkeleton extends Skeleton {
             fontMatrix: new ObjectMatrix<IFontCacheItem>(),
             border: new ObjectMatrix<BorderCache>(),
         };
-        this._cellBgAndBorderCache = null as unknown as ObjectMatrix<boolean>;
+        this._cellBgCacheMatrix = null as unknown as ObjectMatrix<boolean>;
+        this._cellBorderCacheMatrix = null as unknown as ObjectMatrix<boolean>;
         this._overflowCache = null as unknown as ObjectMatrix<IRange>;
 
         this._worksheetData = null as unknown as IWorksheetData;
@@ -1722,10 +1724,11 @@ export class SpreadsheetSkeleton extends Skeleton {
             background: {},
             backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
             font: {},
-            fontMatrix: new ObjectMatrix<any>(),
+            fontMatrix: new ObjectMatrix<IFontCacheItem>(),
             border: new ObjectMatrix<BorderCache>(),
         };
-        this._cellBgAndBorderCache = new ObjectMatrix<boolean>();
+        this._cellBgCacheMatrix.reset();
+        this._cellBorderCacheMatrix.reset();
         this._overflowCache.reset();
     }
 
@@ -1734,23 +1737,112 @@ export class SpreadsheetSkeleton extends Skeleton {
         this._stylesCache.fontMatrix.getValue(row, col)?.documentSkeleton.makeDirty(true); ;
     }
 
+    _setBorderStylesCache(row: number, col: number, style: Nullable<IStyleData>, options: {
+        mergeRange?: IRange;
+        cacheItem?: ICacheItem;
+    } | undefined) {
+        // by default, style cache should includes border and background info.
+        const cacheItem = options?.cacheItem || { bg: true, border: true };
+        if (!cacheItem.border) return;
+        const handledThisCell = Tools.isDefine(this._cellBorderCacheMatrix.getValue(row, col));
+        if (handledThisCell) return;
+
+        this._cellBorderCacheMatrix.setValue(row, col, true);
+        if (style && style.bd) {
+            const mergeRange = options?.mergeRange;
+            if (mergeRange) {
+                this._setMergeBorderProps(BORDER_TYPE.TOP, this._stylesCache, mergeRange);
+                this._setMergeBorderProps(BORDER_TYPE.BOTTOM, this._stylesCache, mergeRange);
+                this._setMergeBorderProps(BORDER_TYPE.LEFT, this._stylesCache, mergeRange);
+                this._setMergeBorderProps(BORDER_TYPE.RIGHT, this._stylesCache, mergeRange);
+            } else if (!this.intersectMergeRange(row, col)) {
+                this._setBorderProps(row, col, BORDER_TYPE.TOP, style, this._stylesCache);
+                this._setBorderProps(row, col, BORDER_TYPE.BOTTOM, style, this._stylesCache);
+                this._setBorderProps(row, col, BORDER_TYPE.LEFT, style, this._stylesCache);
+                this._setBorderProps(row, col, BORDER_TYPE.RIGHT, style, this._stylesCache);
+            }
+
+            this._setBorderProps(row, col, BORDER_TYPE.TL_BR, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_TYPE.TL_BC, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_TYPE.TL_MR, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_TYPE.BL_TR, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_TYPE.ML_TR, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_TYPE.BC_TR, style, this._stylesCache);
+        }
+    }
+
+    _setBgStylesCache(row: number, col: number, style: Nullable<IStyleData>, options: {
+        mergeRange?: IRange;
+        cacheItem?: ICacheItem;
+    } | undefined) {
+        // by default, style cache should includes border and background info.
+        const cacheItem = options?.cacheItem || { bg: true, border: true };
+        if (!cacheItem.bg) return;
+        const handledThisCell = Tools.isDefine(this._cellBgCacheMatrix.getValue(row, col));
+        if (handledThisCell) return;
+
+        this._cellBgCacheMatrix.setValue(row, col, true);
+        if (style && style.bg && style.bg.rgb) {
+            const rgb = style.bg.rgb;
+            if (!this._stylesCache.background![rgb]) {
+                this._stylesCache.background![rgb] = new ObjectMatrix();
+            }
+
+            const bgCache = this._stylesCache.background![rgb];
+            bgCache.setValue(row, col, rgb);
+            const cellInfo = this.getCellByIndexWithNoHeader(row, col);
+            this._stylesCache.backgroundPositions?.setValue(row, col, cellInfo);
+        }
+    }
+
+    _setFontStylesCache(cell: Nullable<ICellData>, row: number, col: number) {
+        if (isNullCell(cell)) return;
+        if (this._stylesCache.fontMatrix.getValue(row, col)) return;
+
+        const modelObject = this._getCellDocumentModel(cell, {
+            displayRawFormula: this._renderRawFormula,
+        });
+        if (modelObject == null) return;
+        const { documentModel } = modelObject;
+        if (documentModel == null) return;
+
+        const { fontString, textRotation, wrapStrategy, verticalAlign, horizontalAlign } = modelObject;
+
+        if (!this._stylesCache.font![fontString]) {
+            this._stylesCache.font![fontString] = new ObjectMatrix();
+        }
+
+        const fontFamilyMatrix: ObjectMatrix<IFontCacheItem> = this._stylesCache.font![fontString];
+        if (fontFamilyMatrix.getValue(row, col)) return;
+
+        const documentViewModel = new DocumentViewModel(documentModel);
+        if (documentViewModel) {
+            const { vertexAngle, centerAngle } = convertTextRotation(textRotation);
+            const documentSkeleton = DocumentSkeleton.create(documentViewModel, this._localService);
+            documentSkeleton.calculate();
+
+            const config: IFontCacheItem = {
+                documentSkeleton,
+                vertexAngle,
+                centerAngle,
+                verticalAlign,
+                horizontalAlign,
+                wrapStrategy,
+            };
+            this._stylesCache.fontMatrix.setValue(row, col, config);
+            fontFamilyMatrix.setValue(row, col, config);
+            this._calculateOverflowCell(row, col, config);
+        }
+    }
+
     /**
-     * Set border background and font to this._stylesCache { border font background }
+     * Set border background and font to this._stylesCache
      * @param row {number}
      * @param col {number}
      * @param options {{ mergeRange: IRange; cacheItem: ICacheItem } | undefined}
      */
-    // eslint-disable-next-line complexity
     private _setStylesCache(row: number, col: number, options?: { mergeRange?: IRange; cacheItem?: ICacheItem }): void {
         if (row === -1 || col === -1) {
-            return;
-        }
-
-        // In most cases, this._cellBgAndBorderCache(row, col) has value means this._styles.font has value.
-        // So we can return in advance by cellBgAndBorderCache(row, col)
-        const hasStyleCache = this._cellBgAndBorderCache.getValue(row, col);
-        if (hasStyleCache === true) {
-            this._makeDocumentSkeletonDirty(row, col);
             return;
         }
 
@@ -1773,96 +1865,10 @@ export class SpreadsheetSkeleton extends Skeleton {
             }
         }
 
-        // by default, style cache should includes border and background info.
-        const cacheItem = options?.cacheItem || { bg: true, border: true };
-
         const style = this._styles.getStyleByCell(cell);
-        //#region cache for background
-        if (cacheItem.bg && style && style.bg && style.bg.rgb) {
-            const rgb = style.bg.rgb;
-            if (!this._stylesCache.background![rgb]) {
-                this._stylesCache.background![rgb] = new ObjectMatrix();
-            }
-
-            const bgCache = this._stylesCache.background![rgb];
-            bgCache.setValue(row, col, rgb);
-            const cellInfo = this.getCellByIndexWithNoHeader(row, col);
-            this._stylesCache.backgroundPositions?.setValue(row, col, cellInfo);
-        }
-        //#endregion
-
-        //#region cache for border
-        if (cacheItem.border && style && style.bd) {
-            const mergeRange = options?.mergeRange;
-            if (mergeRange) {
-                this._setMergeBorderProps(BORDER_TYPE.TOP, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.BOTTOM, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.LEFT, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.RIGHT, this._stylesCache, mergeRange);
-            } else if (!this.intersectMergeRange(row, col)) {
-                this._setBorderProps(row, col, BORDER_TYPE.TOP, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.BOTTOM, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.LEFT, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.RIGHT, style, this._stylesCache);
-            }
-
-            this._setBorderProps(row, col, BORDER_TYPE.TL_BR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.TL_BC, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.TL_MR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.BL_TR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.ML_TR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.BC_TR, style, this._stylesCache);
-        }
-
-        // same as: if (!skipBackgroundAndBorder) {...}
-        if (cacheItem.bg || cacheItem.border) {
-            this._cellBgAndBorderCache.setValue(row, col, true);
-        } else {
-            this._cellBgAndBorderCache.setValue(row, col, false);
-        }
-
-        // When execution reaches here, it indicates that this is a new cell, and the _stylesCache.font does not yet record the data for this cell.
-
-        //#region font style
-        if (isNullCell(cell)) return;
-        if (this._stylesCache.fontMatrix.getValue(row, col)) return;
-
-        const modelObject = this._getCellDocumentModel(cell, {
-            displayRawFormula: this._renderRawFormula,
-        });
-        if (modelObject == null) return;
-        const { documentModel } = modelObject;
-        if (documentModel == null) return;
-
-        const { fontString, textRotation, wrapStrategy, verticalAlign, horizontalAlign } = modelObject;
-
-        if (!this._stylesCache.font![fontString]) {
-            this._stylesCache.font![fontString] = new ObjectMatrix();
-        }
-
-        const fontFamilyMatrix: ObjectMatrix<IFontCacheItem> = this._stylesCache.font![fontString];
-        if (fontFamilyMatrix.getValue(row, col)) return;
-
-        const documentViewModel = new DocumentViewModel(documentModel);
-        if (documentViewModel) {
-            // return;
-            const { vertexAngle, centerAngle } = convertTextRotation(textRotation);
-            const documentSkeleton = DocumentSkeleton.create(documentViewModel, this._localService);
-            documentSkeleton.calculate();
-
-            const config: IFontCacheItem = {
-                documentSkeleton,
-                vertexAngle,
-                centerAngle,
-                verticalAlign,
-                horizontalAlign,
-                wrapStrategy,
-            };
-            this._stylesCache.fontMatrix.setValue(row, col, config);
-            fontFamilyMatrix.setValue(row, col, config);
-            this._calculateOverflowCell(row, col, config);
-        }
-        //#endregion
+        this._setBgStylesCache(row, col, style, options);
+        this._setBorderStylesCache(row, col, style, options);
+        this._setFontStylesCache(cell, row, col);
     }
 
     private _updateConfigAndGetDocumentModel(

@@ -53,11 +53,6 @@ export class SheetExtension extends ComponentExtension<SpreadsheetSkeleton, SHEE
         dataMergeCache: IRange[]
     ) {
         // TODO @lumixraku: there are two coords in sheet!! This one does not include rowHeader and columnHeader. Should keep coord to be only one.
-
-        // const cache = this.cellCache.getValue(rowIndex, columnIndex);
-        // if (cache) return cache;
-        // this.cellCache.setValue(rowIndex, columnIndex, cell);
-
         const cell = getCellByIndex(rowIndex, columnIndex, rowHeightAccumulation, columnWidthAccumulation, dataMergeCache);
         return cell;
     }
