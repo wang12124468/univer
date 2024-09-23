@@ -79,6 +79,7 @@ export class SheetsHyperLinkRenderManagerController extends Disposable {
                 INTERCEPTOR_POINT.CELL_CONTENT,
                 {
                     effect: InterceptorEffectEnum.Value,
+                    priority: 100,
                     handler: (cell, pos, next) => {
                         const { row, col, unitId, subUnitId } = pos;
                         const link = this._hyperLinkModel.getHyperLinkByLocation(unitId, subUnitId, row, col);

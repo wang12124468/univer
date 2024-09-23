@@ -193,24 +193,25 @@ export class SheetInterceptorService extends Disposable {
         }
         const interceptors = this._interceptorsByName.get(key)!;
         interceptors.push(interceptor);
+        const sortedInterceptors = interceptors.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
         if (key === INTERCEPTOR_POINT.CELL_CONTENT as unknown as string) {
             this._interceptorsByName.set(
                 `${key}-${(InterceptorEffectEnum.Style | InterceptorEffectEnum.Value)}`,
-                interceptors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+                sortedInterceptors
             );
             this._interceptorsByName.set(
                 `${key}-${(InterceptorEffectEnum.Style)}`,
-                interceptors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)).filter((i) => (i.effect & InterceptorEffectEnum.Style) > 0)
+                sortedInterceptors.filter((i) => (i.effect & InterceptorEffectEnum.Style) > 0)
             );
             this._interceptorsByName.set(
                 `${key}-${(InterceptorEffectEnum.Value)}`,
-                interceptors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)).filter((i) => (i.effect & InterceptorEffectEnum.Value) > 0)
+                sortedInterceptors.filter((i) => (i.effect & InterceptorEffectEnum.Value) > 0)
             );
         } else {
             this._interceptorsByName.set(
                 key,
-                interceptors.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+                sortedInterceptors
             );
         }
 
