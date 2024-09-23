@@ -19,6 +19,7 @@ import {
     Disposable,
     ICommandService,
     Inject,
+    InterceptorEffectEnum,
     IUniverInstanceService,
     LifecycleStages,
     LocaleService,
@@ -57,10 +58,20 @@ export class SheetsNumfmtCellContentController extends Disposable {
     private _initInterceptorCellContent() {
         const renderCache = new ObjectMatrix<{ result: ICellData; parameters: string | number }>();
         this.disposeWithMe(this._sheetInterceptorService.intercept(INTERCEPTOR_POINT.CELL_CONTENT, {
+            effect: InterceptorEffectEnum.Value | InterceptorEffectEnum.Style,
             handler: (cell, location, next) => {
                 const unitId = location.unitId;
                 const sheetId = location.subUnitId;
                 let numfmtValue;
+                const originCellValue = cell;
+                if (!originCellValue) {
+                    return next(cell);
+                }
+
+                // just handle number
+                if (originCellValue.t !== CellValueType.NUMBER || originCellValue.v == null || Number.isNaN(originCellValue.v)) {
+                    return next(cell);
+                }
 
                 if (cell?.s) {
                     const style = location.workbook.getStyles().get(cell.s);
@@ -73,15 +84,6 @@ export class SheetsNumfmtCellContentController extends Disposable {
                     numfmtValue = this._numfmtService.getValue(unitId, sheetId, location.row, location.col);
                 }
                 if (!numfmtValue) {
-                    return next(cell);
-                }
-                const originCellValue = cell;
-                if (!originCellValue) {
-                    return next(cell);
-                }
-
-                // just handle number
-                if (originCellValue.t !== CellValueType.NUMBER || originCellValue.v == null || Number.isNaN(originCellValue.v)) {
                     return next(cell);
                 }
 

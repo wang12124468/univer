@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import type { Workbook } from '@univerjs/core';
-import { Disposable, IAuthzIoService, ICommandService, Inject, IPermissionService, IUndoRedoService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType, UserManagerService } from '@univerjs/core';
+import { Disposable, IAuthzIoService, ICommandService, Inject, InterceptorEffectEnum, IPermissionService, IUndoRedoService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType, UserManagerService } from '@univerjs/core';
+import { UnitAction, UnitObject } from '@univerjs/protocol';
 
-import type { IAddRangeProtectionMutationParams, IAddWorksheetProtectionParams, IRangeProtectionRule, ISetWorksheetPermissionPointsMutationParams, IWorksheetProtectionRenderCellData } from '@univerjs/sheets';
 import { AddRangeProtectionMutation, AddWorksheetProtectionMutation, defaultWorkbookPermissionPoints, defaultWorksheetPermissionPoint, getAllRangePermissionPoint, getAllWorkbookPermissionPoint, getAllWorksheetPermissionPoint, getAllWorksheetPermissionPointByPointPanel, INTERCEPTOR_POINT, RangeProtectionRenderModel, RangeProtectionRuleModel, SetWorksheetPermissionPointsMutation, SheetInterceptorService, WorksheetEditPermission, WorksheetProtectionPointModel, WorksheetProtectionRuleModel, WorksheetViewPermission } from '@univerjs/sheets';
 import { IDialogService } from '@univerjs/ui';
+import type { Workbook } from '@univerjs/core';
 
-import { UnitAction, UnitObject } from '@univerjs/protocol';
+import type { IAddRangeProtectionMutationParams, IAddWorksheetProtectionParams, IRangeProtectionRule, ISetWorksheetPermissionPointsMutationParams, IWorksheetProtectionRenderCellData } from '@univerjs/sheets';
 
 import type { IRangeProtectionRenderCellData } from '../../views/permission/extensions/range-protection.render';
 
@@ -344,6 +344,7 @@ export class SheetPermissionInitController extends Disposable {
         this.disposeWithMe(this._sheetInterceptorService.intercept(INTERCEPTOR_POINT.CELL_CONTENT, {
             // permissions are placed at a high level to prioritize whether to filter subsequent renderings.
             priority: 999,
+            effect: InterceptorEffectEnum.Value | InterceptorEffectEnum.Style,
             handler: (cell = {}, context, next) => {
                 const { unitId, subUnitId, row, col } = context;
 
@@ -378,6 +379,7 @@ export class SheetPermissionInitController extends Disposable {
         this.disposeWithMe(this._sheetInterceptorService.intercept(INTERCEPTOR_POINT.CELL_CONTENT, {
             // permissions are placed at a high level to prioritize whether to filter subsequent renderings.
             priority: 999,
+            effect: InterceptorEffectEnum.Value | InterceptorEffectEnum.Style,
             handler: (cell = {}, context, next) => {
                 const { unitId, subUnitId } = context;
                 const worksheetRule = this._worksheetProtectionRuleModel.getRule(unitId, subUnitId);

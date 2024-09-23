@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type { Nullable } from '../shared/types';
 import { remove } from './array';
+import type { Nullable } from '../shared/types';
 
 export type InterceptorHandler<M = unknown, C = unknown> = (
     value: Nullable<M>,
@@ -23,7 +23,12 @@ export type InterceptorHandler<M = unknown, C = unknown> = (
     next: (value: Nullable<M>) => Nullable<M>
 ) => Nullable<M>;
 
+export enum InterceptorEffectEnum {
+    Style = 1, // 1<< 0
+    Value = 2, // 1<< 1
+}
 export interface IInterceptor<M, C> {
+    effect: InterceptorEffectEnum;
     priority?: number;
     handler: InterceptorHandler<M, C>;
 }
