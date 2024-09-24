@@ -20,9 +20,6 @@
     "keywords": [
         "univer"
     ],
-    "sideEffects": [
-        "**/*.css"
-    ],
     "exports": {
         ".": "./src/index.ts",
         "./*": "./src/*",

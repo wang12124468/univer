@@ -16,10 +16,8 @@
 
 import {
     BorderStyleTypes,
-    debounce,
+    FUniver,
     ICommandService,
-    Inject,
-    Injector,
     IUniverInstanceService,
     Quantity,
     RedoCommand,
@@ -29,21 +27,19 @@ import {
     UniverInstanceType,
     WrapStrategy,
 } from '@univerjs/core';
-import { SetFormulaCalculationStartMutation } from '@univerjs/engine-formula';
 import { IRenderManagerService } from '@univerjs/engine-render';
 import { ISocketService, WebSocketService } from '@univerjs/network';
-import { DisableCrosshairHighlightOperation, EnableCrosshairHighlightOperation, SetCrosshairHighlightColorOperation } from '@univerjs/sheets-crosshair-highlight';
-import { IRegisterFunctionService, RegisterFunctionService } from '@univerjs/sheets-formula';
 
 import { SHEET_VIEW_KEY } from '@univerjs/sheets-ui';
 import { CopyCommand, PasteCommand } from '@univerjs/ui';
 import type {
     CommandListener,
     Dependency,
-    DocumentDataModel,
+    // DocumentDataModel,
     IDisposable,
-    IDocumentData,
+    // IDocumentData,
     IExecutionOptions,
+    Injector,
     IWorkbookData,
     Nullable,
     Workbook,
@@ -57,48 +53,18 @@ import type {
     SpreadsheetRowHeader,
 } from '@univerjs/engine-render';
 import type { ISocket } from '@univerjs/network';
-import type { ISetCrosshairHighlightColorOperationParams } from '@univerjs/sheets-crosshair-highlight';
-import type { IRegisterFunctionParams } from '@univerjs/sheets-formula';
-import { FDocument } from './docs/f-document';
 import { FHooks } from './f-hooks';
 import { FDataValidationBuilder } from './sheets/f-data-validation-builder';
-import { FFormula } from './sheets/f-formula';
 import { FPermission } from './sheets/f-permission';
 import { FSheetHooks } from './sheets/f-sheet-hooks';
 import { FWorkbook } from './sheets/f-workbook';
 
-export class FUniver {
+export class FacadeUniver {
+    protected readonly _injector: Injector;
+
     static BorderStyle = BorderStyleTypes;
 
     static WrapStrategy = WrapStrategy;
-
-    constructor(
-        @Inject(Injector) protected readonly _injector: Injector,
-        @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
-        @ICommandService private readonly _commandService: ICommandService
-    ) {
-        this._initialize();
-    }
-
-    /**
-     * Initialize the FUniver instance.
-     *
-     * @private
-     */
-    private _initialize(): void {
-        this._debouncedFormulaCalculation = debounce(() => {
-            this._commandService.executeCommand(
-                SetFormulaCalculationStartMutation.id,
-                {
-                    commands: [],
-                    forceCalculation: true,
-                },
-                {
-                    onlyLocal: true,
-                }
-            );
-        }, 10);
-    }
 
     /**
      * Get dependencies for FUniver, you can override newAPI to add more dependencies.
@@ -130,7 +96,7 @@ export class FUniver {
      */
     static newAPI(wrapped: Univer | Injector): FUniver {
         const injector = wrapped instanceof Univer ? wrapped.__getInjector() : wrapped;
-        const dependencies = FUniver.getDependencies(injector);
+        const dependencies = FacadeUniver.getDependencies(injector);
         dependencies.forEach((dependency) => injector.add(dependency));
         return injector.createInstance(FUniver);
     }
@@ -140,30 +106,15 @@ export class FUniver {
     }
 
     /**
-     * registerFunction may be executed multiple times, triggering multiple formula forced refreshes
-     */
-    private _debouncedFormulaCalculation: () => void;
-
-    /**
      * Create a new spreadsheet and get the API handler of that spreadsheet.
      *
      * @param {Partial<IWorkbookData>} data The snapshot of the spreadsheet.
      * @returns {FWorkbook} FWorkbook API instance.
      */
     createUniverSheet(data: Partial<IWorkbookData>): FWorkbook {
-        const workbook = this._univerInstanceService.createUnit<IWorkbookData, Workbook>(UniverInstanceType.UNIVER_SHEET, data);
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const workbook = univerInstanceService.createUnit<IWorkbookData, Workbook>(UniverInstanceType.UNIVER_SHEET, data);
         return this._injector.createInstance(FWorkbook, workbook);
-    }
-
-    /**
-     * Create a new document and get the API handler of that document.
-     *
-     * @param {Partial<IDocumentData>} data The snapshot of the document.
-     * @returns {FDocument} FDocument API instance.
-     */
-    createUniverDoc(data: Partial<IDocumentData>): FDocument {
-        const document = this._univerInstanceService.createUnit<IDocumentData, DocumentDataModel>(UniverInstanceType.UNIVER_DOC, data);
-        return this._injector.createInstance(FDocument, document);
     }
 
     /**
@@ -173,7 +124,8 @@ export class FUniver {
      * @returns Whether the Univer instance is disposed successfully.
      */
     disposeUnit(unitId: string): boolean {
-        return this._univerInstanceService.disposeUnit(unitId);
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        return univerInstanceService.disposeUnit(unitId);
     }
 
     /**
@@ -183,27 +135,13 @@ export class FUniver {
      * @returns {FWorkbook | null} The spreadsheet API instance.
      */
     getUniverSheet(id: string): FWorkbook | null {
-        const workbook = this._univerInstanceService.getUniverSheetInstance(id);
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const workbook = univerInstanceService.getUniverSheetInstance(id);
         if (!workbook) {
             return null;
         }
 
         return this._injector.createInstance(FWorkbook, workbook);
-    }
-
-    /**
-     * Get the document API handler by the document id.
-     *
-     * @param {string} id The document id.
-     * @returns {FDocument | null} The document API instance.
-     */
-    getUniverDoc(id: string): FDocument | null {
-        const document = this._univerInstanceService.getUniverDocInstance(id);
-        if (!document) {
-            return null;
-        }
-
-        return this._injector.createInstance(FDocument, document);
     }
 
     /**
@@ -212,50 +150,13 @@ export class FUniver {
      * @returns {FWorkbook | null} The currently focused Univer spreadsheet.
      */
     getActiveWorkbook(): FWorkbook | null {
-        const workbook = this._univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
         if (!workbook) {
             return null;
         }
 
         return this._injector.createInstance(FWorkbook, workbook);
-    }
-
-    /**
-     * Get the currently focused Univer document.
-     *
-     * @returns {FDocument | null} The currently focused Univer document.
-     */
-    getActiveDocument(): FDocument | null {
-        const document = this._univerInstanceService.getCurrentUnitForType<DocumentDataModel>(UniverInstanceType.UNIVER_DOC);
-        if (!document) {
-            return null;
-        }
-
-        return this._injector.createInstance(FDocument, document);
-    }
-
-    /**
-     * Register a function to the spreadsheet.
-     *
-     * @param {IRegisterFunctionParams} config The configuration of the function.
-     * @returns {IDisposable} The disposable instance.
-     */
-    registerFunction(config: IRegisterFunctionParams): IDisposable {
-        let registerFunctionService = this._injector.get(IRegisterFunctionService);
-
-        if (!registerFunctionService) {
-            this._injector.add([IRegisterFunctionService, { useClass: RegisterFunctionService }]);
-            registerFunctionService = this._injector.get(IRegisterFunctionService);
-        }
-
-        const functionsDisposable = registerFunctionService.registerFunctions(config);
-
-        // When the initialization workbook data already contains custom formulas, and then register the formula, you need to trigger a forced calculation to refresh the calculation results
-        this._debouncedFormulaCalculation();
-
-        return toDisposable(() => {
-            functionsDisposable.dispose();
-        });
     }
 
     /**
@@ -309,10 +210,6 @@ export class FUniver {
         });
     }
 
-    getFormula(): FFormula {
-        return this._injector.createInstance(FFormula);
-    }
-
     // #region
 
     /**
@@ -321,7 +218,8 @@ export class FUniver {
      * @returns {Promise<boolean>} undo result
      */
     undo(): Promise<boolean> {
-        return this._commandService.executeCommand(UndoCommand.id);
+        const commandService = this._injector.get(ICommandService);
+        return commandService.executeCommand(UndoCommand.id);
     }
 
     /**
@@ -330,15 +228,18 @@ export class FUniver {
      * @returns {Promise<boolean>} redo result
      */
     redo(): Promise<boolean> {
-        return this._commandService.executeCommand(RedoCommand.id);
+        const commandService = this._injector.get(ICommandService);
+        return commandService.executeCommand(RedoCommand.id);
     }
 
     copy(): Promise<boolean> {
-        return this._commandService.executeCommand(CopyCommand.id);
+        const commandService = this._injector.get(ICommandService);
+        return commandService.executeCommand(CopyCommand.id);
     }
 
     paste(): Promise<boolean> {
-        return this._commandService.executeCommand(PasteCommand.id);
+        const commandService = this._injector.get(ICommandService);
+        return commandService.executeCommand(PasteCommand.id);
     }
 
     // #endregion
@@ -352,7 +253,8 @@ export class FUniver {
      * @returns {IDisposable} The disposable instance.
      */
     onBeforeCommandExecute(callback: CommandListener): IDisposable {
-        return this._commandService.beforeCommandExecuted((command, options?: IExecutionOptions) => {
+        const commandService = this._injector.get(ICommandService);
+        return commandService.beforeCommandExecuted((command, options?: IExecutionOptions) => {
             callback(command, options);
         });
     }
@@ -364,7 +266,8 @@ export class FUniver {
      * @returns {IDisposable} The disposable instance.
      */
     onCommandExecuted(callback: CommandListener): IDisposable {
-        return this._commandService.onCommandExecuted((command, options?: IExecutionOptions) => {
+        const commandService = this._injector.get(ICommandService);
+        return commandService.onCommandExecuted((command, options?: IExecutionOptions) => {
             callback(command, options);
         });
     }
@@ -384,7 +287,8 @@ export class FUniver {
         params?: P,
         options?: IExecutionOptions
     ): Promise<R> {
-        return this._commandService.executeCommand(id, params, options);
+        const commandService = this._injector.get(ICommandService);
+        return commandService.executeCommand(id, params, options);
     }
 
     /**
@@ -490,32 +394,6 @@ export class FUniver {
         sheetRow.setCustomHeader(cfg);
     }
 
-    // #region API applies to all workbooks
-
-    /**
-     * Enable or disable crosshair highlight.
-     * @param {boolean} enabled if crosshair highlight should be enabled
-     */
-    setCrosshairHighlightEnabled(enabled: boolean): void {
-        if (enabled) {
-            this._commandService.executeCommand(EnableCrosshairHighlightOperation.id);
-        } else {
-            this._commandService.executeCommand(DisableCrosshairHighlightOperation.id);
-        }
-    }
-
-    /**
-     * Set the color of the crosshair highlight.
-     * @param {string} color the color of the crosshair highlight
-     */
-    setCrosshairHighlightColor(color: string): void {
-        this._commandService.executeCommand(SetCrosshairHighlightColorOperation.id, {
-            value: color,
-        } as ISetCrosshairHighlightColorOperationParams);
-    }
-
-    // #endregion
-
     /**
      * Get the PermissionInstance.
      *
@@ -525,3 +403,7 @@ export class FUniver {
         return this._injector.createInstance(FPermission);
     }
 }
+
+FUniver.extend(FacadeUniver);
+
+export { FUniver };

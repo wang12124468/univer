@@ -16,14 +16,11 @@
 
 export type { FontLine, FontStyle, FontWeight } from './apis/sheets/f-range';
 
-export { FUniver } from './apis/facade';
-
 export { FHooks } from './apis/f-hooks';
 
 // #region - Univer Sheet
 
 export { FFilter } from './apis/sheets/f-filter';
-export { FFormula } from './apis/sheets/f-formula';
 export { FPermission } from './apis/sheets/f-permission';
 export { FRange } from './apis/sheets/f-range';
 export { FSelection } from './apis/sheets/f-selection';
@@ -35,3 +32,5 @@ export { FDataValidationBuilder } from './apis/sheets/f-data-validation-builder'
 export { FThreadComment } from './apis/sheets/f-thread-comment';
 
 // #endregion
+
+export { FUniver } from './apis/facade';

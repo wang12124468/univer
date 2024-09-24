@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { DOC_RANGE_TYPE, ICommandService,
+import {
+    DOC_RANGE_TYPE,
+    FUniver,
+    ICommandService,
     Inject,
     Injector,
     IResourceManagerService,
@@ -134,3 +137,52 @@ export class FDocument {
     //     )
     // }
 }
+
+class FacadeDocument {
+    protected readonly _injector: Injector;
+
+    /**
+     * Create a new document and get the API handler of that document.
+     *
+     * @param {Partial<IDocumentData>} data The snapshot of the document.
+     * @returns {FDocument} FDocument API instance.
+     */
+    createUniverDoc(data: Partial<IDocumentData>): FDocument {
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const document = univerInstanceService.createUnit<IDocumentData, DocumentDataModel>(UniverInstanceType.UNIVER_DOC, data);
+        return this._injector.createInstance(FDocument, document);
+    }
+
+    /**
+     * Get the document API handler by the document id.
+     *
+     * @param {string} id The document id.
+     * @returns {FDocument | null} The document API instance.
+     */
+    getUniverDoc(id: string): FDocument | null {
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const document = univerInstanceService.getUniverDocInstance(id);
+        if (!document) {
+            return null;
+        }
+
+        return this._injector.createInstance(FDocument, document);
+    }
+
+    /**
+     * Get the currently focused Univer document.
+     *
+     * @returns {FDocument | null} The currently focused Univer document.
+     */
+    getActiveDocument(): FDocument | null {
+        const univerInstanceService = this._injector.get(IUniverInstanceService);
+        const document = univerInstanceService.getCurrentUnitForType<DocumentDataModel>(UniverInstanceType.UNIVER_DOC);
+        if (!document) {
+            return null;
+        }
+
+        return this._injector.createInstance(FDocument, document);
+    }
+}
+
+FUniver.extend(FacadeDocument);

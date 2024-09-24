@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import type { ICellData, Injector, IStyleData, Nullable } from '@univerjs/core';
 import { ICommandService, IUniverInstanceService } from '@univerjs/core';
+import { SetArrayFormulaDataMutation, SetFormulaCalculationNotificationMutation, SetFormulaCalculationResultMutation, SetFormulaCalculationStartMutation, SetFormulaCalculationStopMutation } from '@univerjs/engine-formula';
 import { SetHorizontalTextAlignCommand, SetRangeValuesCommand, SetRangeValuesMutation, SetStyleCommand, SetTextWrapCommand, SetVerticalTextAlignCommand } from '@univerjs/sheets';
+
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { SetArrayFormulaDataMutation, SetFormulaCalculationNotificationMutation, SetFormulaCalculationResultMutation, SetFormulaCalculationStartMutation, SetFormulaCalculationStopMutation } from '@univerjs/engine-formula';
-import type { FUniver } from '../../facade';
+import type { FUniver, ICellData, Injector, IStyleData, Nullable } from '@univerjs/core';
 import { createFormulaTestBed } from './create-formula-test-bed';
 
 describe('Test FFormula', () => {

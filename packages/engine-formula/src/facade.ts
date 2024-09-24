@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
+import { FBase, FUniver, ICommandService, Inject, Injector } from '@univerjs/core';
 import type { ICommandInfo, IDisposable } from '@univerjs/core';
-import { ICommandService } from '@univerjs/core';
-import type { FormulaExecutedStateType, IExecutionInProgressParams, ISetFormulaCalculationNotificationMutation, ISetFormulaCalculationStartMutation } from '@univerjs/engine-formula';
-import { SetFormulaCalculationNotificationMutation, SetFormulaCalculationStartMutation, SetFormulaCalculationStopMutation } from '@univerjs/engine-formula';
+import { SetFormulaCalculationNotificationMutation, SetFormulaCalculationStartMutation, SetFormulaCalculationStopMutation } from './commands/mutations/set-formula-calculation.mutation';
+import type { ISetFormulaCalculationNotificationMutation, ISetFormulaCalculationStartMutation } from './commands/mutations/set-formula-calculation.mutation';
+import type { FormulaExecutedStateType, IExecutionInProgressParams } from './services/runtime.service';
 
 /**
  * This interface class provides methods to modify the behavior of the operation formula.
  */
-export class FFormula {
-    constructor(
-        @ICommandService private readonly _commandService: ICommandService
-    ) {
+export class FFormula extends FBase {
+    constructor(@Inject(Injector) protected readonly _injector: Injector) {
+        super();
     }
 
     /**
      * Start the calculation of the formula.
      */
     executeCalculation(): void {
-        this._commandService.executeCommand(
+        const commandService = this._injector.get(ICommandService);
+        commandService.executeCommand(
             SetFormulaCalculationStartMutation.id,
             {
                 commands: [],
@@ -48,14 +49,16 @@ export class FFormula {
      * Stop the calculation of the formula.
      */
     stopCalculation(): void {
-        this._commandService.executeCommand(SetFormulaCalculationStopMutation.id, {});
+        const commandService = this._injector.get(ICommandService);
+        commandService.executeCommand(SetFormulaCalculationStopMutation.id, {});
     }
 
     /**
      * Listening calculation starts.
      */
     calculationStart(callback: (forceCalculation: boolean) => void): IDisposable {
-        return this._commandService.onCommandExecuted((command: ICommandInfo) => {
+        const commandService = this._injector.get(ICommandService);
+        return commandService.onCommandExecuted((command: ICommandInfo) => {
             if (command.id === SetFormulaCalculationStartMutation.id) {
                 const params = command.params as ISetFormulaCalculationStartMutation;
                 callback(params.forceCalculation);
@@ -67,7 +70,8 @@ export class FFormula {
      * Listening calculation ends.
      */
     calculationEnd(callback: (functionsExecutedState: FormulaExecutedStateType) => void): IDisposable {
-        return this._commandService.onCommandExecuted((command: ICommandInfo) => {
+        const commandService = this._injector.get(ICommandService);
+        return commandService.onCommandExecuted((command: ICommandInfo) => {
             if (command.id !== SetFormulaCalculationNotificationMutation.id) {
                 return;
             }
@@ -84,7 +88,8 @@ export class FFormula {
      * Listening calculation processing.
      */
     calculationProcessing(callback: (stageInfo: IExecutionInProgressParams) => void): IDisposable {
-        return this._commandService.onCommandExecuted((command: ICommandInfo) => {
+        const commandService = this._injector.get(ICommandService);
+        return commandService.onCommandExecuted((command: ICommandInfo) => {
             if (command.id !== SetFormulaCalculationNotificationMutation.id) {
                 return;
             }
@@ -97,3 +102,13 @@ export class FFormula {
         });
     }
 }
+
+class FacadeFormula {
+    protected readonly _injector: Injector;
+
+    getFormula(): FFormula {
+        return this._injector.createInstance(FFormula);
+    }
+}
+
+FUniver.extend(FacadeFormula);

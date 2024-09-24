@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import './facade';
+
+// #endregion
 export { DocAutoFormatService } from '../../docs-ui/src/services/doc-auto-format.service';
 export * from './basics';
 export type { IDocObjectParam } from './basics/component-tools';

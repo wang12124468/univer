@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-const process = require('node:process');
 const { writeFileSync } = require('node:fs');
+const process = require('node:process');
 const { convertLibNameFromPackageName } = require('./utils');
 
 exports.autoExternalizeDependency = function autoExternalizeDependency() {

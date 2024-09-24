@@ -31,12 +31,12 @@ export {
 export * from './common/di';
 export { shallowEqual } from './common/equal';
 export { CustomCommandExecutionError } from './common/error';
+export { FBase, FUniver } from './common/facade';
 export { throttle } from './common/function';
 export type { ICellInterceptor, IComposeInterceptors, IInterceptor, InterceptorHandler } from './common/interceptor';
 export { composeInterceptors, createInterceptorKey, InterceptorEffectEnum, InterceptorManager } from './common/interceptor';
 export type { Serializable } from './common/json';
 export { MemoryCursor } from './common/memory-cursor';
-export { mixinClass } from './common/mixin';
 export { isNumeric, isSafeNumeric } from './common/number';
 export { Registry, RegistryAsMap } from './common/registry';
 export { requestImmediateMacroTask } from './common/request-immediate-macro-task';
@@ -102,10 +102,10 @@ export {
     IPermissionService,
     PermissionStatus,
 } from './services/permission/type';
-export type { IPermissionParam } from './services/permission/type';
 
 // #region sheet
 
+export type { IPermissionParam } from './services/permission/type';
 export type { IPermissionPoint } from './services/permission/type';
 export type { IPermissionTypes, RangePermissionPointConstructor, WorkbookPermissionPointConstructor, WorkSheetPermissionPointConstructor } from './services/permission/type';
 export { Plugin } from './services/plugin/plugin';
@@ -116,10 +116,10 @@ export { IResourceLoaderService } from './services/resource-loader/type';
 export { ResourceManagerService } from './services/resource-manager/resource-manager.service';
 export type { IResourceHook, IResources } from './services/resource-manager/type';
 export { IResourceManagerService } from './services/resource-manager/type';
-export { type IStyleSheet, ThemeService } from './services/theme/theme.service';
 
 // #region sheet
 
+export { type IStyleSheet, ThemeService } from './services/theme/theme.service';
 export {
     type IUndoRedoCommandInfos,
     type IUndoRedoCommandInfosByInterceptor,
@@ -159,18 +159,16 @@ export {
 export { Styles } from './sheets/styles';
 export * from './sheets/typedef';
 export { isRangesEqual, isUnitRangesEqual } from './sheets/util';
-export { SheetViewModel } from './sheets/view-model';
 
 // #endregion
 
+export { SheetViewModel } from './sheets/view-model';
 export { getWorksheetUID, Workbook } from './sheets/workbook';
-export { extractPureTextFromCell, getOriginCellValue, Worksheet } from './sheets/worksheet';
 
+export { extractPureTextFromCell, getOriginCellValue, Worksheet } from './sheets/worksheet';
 export { SlideDataModel } from './slides/slide-model';
 export * from './types/const';
-export * from './types/const';
 export { skipParseTagNames } from './types/const/clipboard';
-export * from './types/enum';
 export * from './types/enum';
 export { DataValidationErrorStyle } from './types/enum/data-validation-error-style';
 export { DataValidationImeMode } from './types/enum/data-validation-ime-mode';
@@ -179,8 +177,7 @@ export { DataValidationRenderMode } from './types/enum/data-validation-render-mo
 export { DataValidationStatus } from './types/enum/data-validation-status';
 export { DataValidationType } from './types/enum/data-validation-type';
 export * from './types/interfaces';
-export * from './types/interfaces';
 export type { ICellCustomRender, ICellRenderContext } from './types/interfaces/i-cell-custom-render';
-export type { IDataValidationRule, IDataValidationRuleBase, IDataValidationRuleInfo, IDataValidationRuleOptions, ISheetDataValidationRule } from './types/interfaces/i-data-validation';
 
+export type { IDataValidationRule, IDataValidationRuleBase, IDataValidationRuleInfo, IDataValidationRuleOptions, ISheetDataValidationRule } from './types/interfaces/i-data-validation';
 export { Univer } from './univer';

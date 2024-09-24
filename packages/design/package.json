@@ -21,7 +21,7 @@
         "univer"
     ],
     "sideEffects": [
-        "**/*.css"
+        "react-grid-layout/css/styles.css"
     ],
     "exports": {
         ".": "./src/index.ts",

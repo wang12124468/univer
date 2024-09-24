@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-const process = require('node:process');
 const fs = require('node:fs');
 const path = require('node:path');
+const process = require('node:process');
 const esbuild = require('esbuild');
 
 exports.buildPkg = function buildPkg() {

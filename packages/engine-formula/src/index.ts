@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import './facade';
+
+export { FFormula } from './facade';
+
 export type {
     IArrayFormulaRangeType,
     IArrayFormulaUnitCellType,

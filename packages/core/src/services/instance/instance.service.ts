@@ -17,7 +17,7 @@
 import { BehaviorSubject, distinctUntilChanged, filter, map, Subject } from 'rxjs';
 import type { Observable } from 'rxjs';
 
-import { createIdentifier, Inject, Injector } from '../../common/di';
+import { createIdentifier } from '../../common/di';
 import { UniverInstanceType } from '../../common/unit';
 import { DocumentDataModel } from '../../docs/data-model/document-data-model';
 import { Disposable } from '../../shared/lifecycle';
@@ -98,7 +98,6 @@ export class UniverInstanceService extends Disposable implements IUniverInstance
     private readonly _unitsByType = new Map<UnitType, UnitModel[]>();
 
     constructor(
-        @Inject(Injector) private readonly _injector: Injector,
         @IContextService private readonly _contextService: IContextService
     ) {
         super();

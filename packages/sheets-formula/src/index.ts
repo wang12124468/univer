@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import './facade';
+
 export { UniverRemoteSheetsFormulaPlugin, UniverSheetsFormulaMobilePlugin, UniverSheetsFormulaPlugin } from './formula-ui-plugin';
 export { IDescriptionService } from './services/description.service';
 export { DescriptionService } from './services/description.service';

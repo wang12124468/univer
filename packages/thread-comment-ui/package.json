@@ -18,9 +18,6 @@
         "url": "https://github.com/dream-num/univer/issues"
     },
     "keywords": [],
-    "sideEffects": [
-        "**/*.css"
-    ],
     "exports": {
         ".": "./src/index.ts",
         "./*": "./src/*",
