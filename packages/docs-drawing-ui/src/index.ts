@@ -33,3 +33,4 @@ export { InsertDocImageCommand } from './commands/commands/insert-image.command'
 export { SidebarDocDrawingOperation } from './commands/operations/open-drawing-panel.operation';
 
 // #endregion
+export type { IDeleteDrawingCommandParam } from './commands/commands/interfaces';

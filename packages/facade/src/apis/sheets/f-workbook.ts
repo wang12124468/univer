@@ -30,6 +30,8 @@ import {
 } from '@univerjs/core';
 import { getPrimaryForRange, InsertSheetCommand, RemoveSheetCommand, SetSelectionsOperation, SetWorksheetActiveOperation, SheetsSelectionsService, WorkbookEditablePermission } from '@univerjs/sheets';
 import { AddSheetDataValidationCommand, RemoveSheetAllDataValidationCommand, RemoveSheetDataValidationCommand, SheetDataValidationModel, SheetsDataValidationValidatorService, UpdateSheetDataValidationOptionsCommand, UpdateSheetDataValidationRangeCommand, UpdateSheetDataValidationSettingCommand } from '@univerjs/sheets-data-validation';
+import { type ISheetDrawing, ISheetDrawingService } from '@univerjs/sheets-drawing';
+import { InsertSheetDrawingCommand, RemoveSheetDrawingCommand } from '@univerjs/sheets-drawing-ui';
 import { SheetsHyperLinkResolverService } from '@univerjs/sheets-hyper-link-ui';
 import { AddCommentCommand, DeleteCommentCommand, DeleteCommentTreeCommand, ThreadCommentModel, UpdateCommentCommand } from '@univerjs/thread-comment';
 import { IDialogService, ISidebarService } from '@univerjs/ui';
@@ -37,12 +39,13 @@ import { filter } from 'rxjs';
 import type { CommandListener, ICommandInfo, IDisposable, IExecutionOptions, IRange, IWorkbookData, Nullable, ObjectMatrix, Workbook } from '@univerjs/core';
 import type { IRuleChange, IValidStatusChange } from '@univerjs/data-validation';
 import type { IUpdateCommandParams } from '@univerjs/docs-ui';
+import type { IDrawingSubunitMap } from '@univerjs/drawing';
 import type {
     ISetSelectionsOperationParams,
     ISheetCommandSharedParams,
 } from '@univerjs/sheets';
 import type { IAddSheetDataValidationCommandParams, IDataValidationResCache, IRemoveSheetAllDataValidationCommandParams, IRemoveSheetDataValidationCommandParams, IUpdateSheetDataValidationOptionsCommandParams, IUpdateSheetDataValidationRangeCommandParams, IUpdateSheetDataValidationSettingCommandParams } from '@univerjs/sheets-data-validation';
-import type { ICanvasFloatDom } from '@univerjs/sheets-drawing-ui';
+import type { ICanvasFloatDom, IDeleteDrawingCommandParam } from '@univerjs/sheets-drawing-ui';
 import type { ISheetHyperLinkInfo } from '@univerjs/sheets-hyper-link-ui';
 import type { CommentUpdate, IAddCommentCommandParams, IDeleteCommentCommandParams } from '@univerjs/thread-comment';
 import type { IDialogPartMethodOptions, ISidebarMethodOptions } from '@univerjs/ui';
@@ -629,4 +632,44 @@ export class FWorkbook {
         info.handler();
     }
     // #endregion
+
+    // #region drawing
+    /**
+     * create a drawing for the sheet
+     * @param sheetId the sheet id to create drawing
+     * @returns the drawing id
+     */
+    insertDrawings(drawings: ISheetDrawing[]): boolean {
+        return this._commandService.syncExecuteCommand(
+            InsertSheetDrawingCommand.id,
+            {
+                unitId: this.getId(),
+                drawings,
+            }
+        );
+    }
+
+    /**
+     * remove drawings from the sheet
+     * @param drawings the drawings to remove
+     * @returns true if the drawings are removed, false otherwise
+     */
+    removeDrawings(drawings: IDeleteDrawingCommandParam[]): boolean {
+        return this._commandService.syncExecuteCommand(
+            RemoveSheetDrawingCommand.id,
+            {
+                unitId: this.getId(),
+                drawings,
+            }
+        );
+    }
+
+    /**
+     * get the raw drawings from the workbook
+     * @returns the raw drawings
+     */
+    getRawDrawings(): IDrawingSubunitMap<ISheetDrawing> {
+        const sheetDrawingService = this._injector.get(ISheetDrawingService);
+        return sheetDrawingService.getDrawingDataForUnit(this.getId());
+    }
 }

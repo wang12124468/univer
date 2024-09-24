@@ -35,3 +35,4 @@ export { type IInsertImageCommandParams, InsertFloatImageCommand } from './comma
 export { SidebarSheetDrawingOperation } from './commands/operations/open-drawing-panel.operation';
 
 // #endregion
+export type { IDeleteDrawingCommandParam } from './commands/commands/interfaces';

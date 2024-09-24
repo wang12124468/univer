@@ -19,13 +19,16 @@ import { deserializeRangeWithSheet } from '@univerjs/engine-formula';
 import { copyRangeStyles, InsertColCommand, InsertRowCommand, MoveColsCommand, MoveRowsCommand, RemoveColCommand, RemoveRowCommand, SetColHiddenCommand, SetColWidthCommand, SetFrozenCommand, SetRowHeightCommand, SetRowHiddenCommand, SetSpecificColsVisibleCommand, SetSpecificRowsVisibleCommand, SetWorksheetRowIsAutoHeightCommand, SheetsSelectionsService } from '@univerjs/sheets';
 
 import { DataValidationModel, SheetsDataValidationValidatorService } from '@univerjs/sheets-data-validation';
+import { ISheetDrawingService } from '@univerjs/sheets-drawing';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { SheetsFilterService } from '@univerjs/sheets-filter';
 import { SheetsThreadCommentModel } from '@univerjs/sheets-thread-comment';
 import { CancelFrozenCommand } from '@univerjs/sheets-ui';
 import { ComponentManager } from '@univerjs/ui';
 import type { IFreeze, IRange, Nullable, ObjectMatrix, Workbook, Worksheet } from '@univerjs/core';
+import type { IDrawingMapItem } from '@univerjs/drawing';
 import type { IDataValidationResCache } from '@univerjs/sheets-data-validation';
+import type { ISheetDrawing } from '@univerjs/sheets-drawing';
 import type { FilterModel } from '@univerjs/sheets-filter';
 import { FDataValidation } from './f-data-validation';
 import { FFilter } from './f-filter';
@@ -971,5 +974,13 @@ export class FWorksheet {
             unitId: this._workbook.getUnitId(),
             subUnitId: this.getSheetId(),
         });
+    }
+
+    getRawDrawings(): Nullable<IDrawingMapItem<ISheetDrawing>> {
+        const sheetDrawingService = this._injector.get(ISheetDrawingService);
+        const map = sheetDrawingService.getDrawingDataForUnit(this._workbook.getUnitId());
+        const sheetId = this._worksheet.getSheetId();
+        const drawings = map[sheetId];
+        return drawings;
     }
 }
