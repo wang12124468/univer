@@ -89,6 +89,9 @@ import { DocumentSkeleton } from '../docs/layout/doc-skeleton';
 import { columnIterator } from '../docs/layout/tools';
 import { DocumentViewModel } from '../docs/view-model/document-view-model';
 import { Skeleton } from '../skeleton';
+import type { IDocumentSkeletonColumn } from '../../basics/i-document-skeleton-cached';
+import type { IBoundRectNoAngle, IViewportInfo } from '../../basics/vector2';
+import type { BorderCache, colorString, IFontCacheItem, IStylesCache } from './interfaces';
 
 function addLinkToDocumentModel(documentModel: DocumentDataModel, linkUrl: string, linkId: string): void {
     const body = documentModel.getBody()!;
@@ -261,11 +264,10 @@ export class SpreadsheetSkeleton extends Skeleton {
     // private _dataMergeCache: IRange[] = [];
     private _overflowCache: ObjectMatrix<IRange> = new ObjectMatrix();
     private _stylesCache: IStylesCache = {
-        background: {},
-        backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
-        font: {} as Record<string, ObjectMatrix<IFontCacheItem>>,
+        // background render background by color, it's better we put cells share same bg color in a group.
+        bgGroupMatrix: {},
         fontMatrix: new ObjectMatrix<IFontCacheItem>(),
-        border: new ObjectMatrix<BorderCache>(),
+        borderMatrix: new ObjectMatrix<BorderCache>(),
     };
 
     /** A matrix to store if a (row, column) position has render cache. */
@@ -374,16 +376,7 @@ export class SpreadsheetSkeleton extends Skeleton {
             endColumn: -1,
         };
         // this._dataMergeCache = [];
-        this._stylesCache = {
-            background: {},
-            backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
-            font: {} as Record<string, ObjectMatrix<IFontCacheItem>>,
-            fontMatrix: new ObjectMatrix<IFontCacheItem>(),
-            border: new ObjectMatrix<BorderCache>(),
-        };
-        this._handleBgMatrix.reset();
-        this._handleBorderMatrix.reset();
-        this._overflowCache.reset();
+        this._resetCache();
 
         this._worksheetData = null as unknown as IWorksheetData;
         this._cellData = null as unknown as ObjectMatrix<Nullable<ICellData>>;
@@ -1021,8 +1014,9 @@ export class SpreadsheetSkeleton extends Skeleton {
 
     /**
      * Return cell information corresponding to the current coordinates, including the merged cell object.
-     * @param row Specified Row Coordinate
-     * @param column Specified Column Coordinate
+     * @param row {number} row index
+     * @param column {number} Specified Column Coordinate
+     * @returns {ISelectionCellWithMergeInfo} cellInfo
      */
     getCellByIndex(row: number, column: number): ISelectionCellWithMergeInfo {
         const {
@@ -1062,6 +1056,12 @@ export class SpreadsheetSkeleton extends Skeleton {
         };
     }
 
+    /**
+     * Nearly same as getCellByIndex, but startXY endXY use corrdinates without rowheader & colheader.
+     * @param row
+     * @param column
+     * @returns {ISelectionCellWithMergeInfo} cellInfo
+     */
     getCellByIndexWithNoHeader(row: number, column: number): ISelectionCellWithMergeInfo {
         const { rowHeightAccumulation, columnWidthAccumulation } = this;
 
@@ -1089,6 +1089,22 @@ export class SpreadsheetSkeleton extends Skeleton {
             isMergedMainCell,
             mergeInfo: newMergeInfo,
         };
+    }
+
+    /**
+     * The should have only one coordinate system in Sheet.
+     * TODO @lumixraku
+     * @param row
+     * @param column
+     * @param header
+     * @returns {ISelectionCellWithMergeInfo} cellInfo
+     */
+    getMergedCellInfo(row: number, column: number, header: boolean): ISelectionCellWithMergeInfo {
+        if (header) {
+            return this.getCellByIndex(row, column);
+        } else {
+            return this.getCellByIndexWithNoHeader(row, column);
+        }
     }
 
     // convert canvas content position to physical position in screen
@@ -1721,13 +1737,9 @@ export class SpreadsheetSkeleton extends Skeleton {
      * Any changes to sheet model would reset cache.
      */
     private _resetCache(): void {
-        this._stylesCache = {
-            background: {},
-            backgroundPositions: new ObjectMatrix<ISelectionCellWithMergeInfo>(),
-            font: {},
-            fontMatrix: new ObjectMatrix<IFontCacheItem>(),
-            border: new ObjectMatrix<BorderCache>(),
-        };
+        this._stylesCache.bgGroupMatrix = {};
+        this._stylesCache.fontMatrix.reset();
+        this._stylesCache.borderMatrix.reset();
         this._handleBgMatrix.reset();
         this._handleBorderMatrix.reset();
         this._overflowCache.reset();
@@ -1785,14 +1797,10 @@ export class SpreadsheetSkeleton extends Skeleton {
         this._handleBgMatrix.setValue(row, col, true);
         if (style && style.bg && style.bg.rgb) {
             const rgb = style.bg.rgb;
-            if (!this._stylesCache.background![rgb]) {
-                this._stylesCache.background![rgb] = new ObjectMatrix();
+            if (!this._stylesCache.bgGroupMatrix[rgb]) {
+                this._stylesCache.bgGroupMatrix[rgb] = new ObjectMatrix();
             }
-
-            const bgCache = this._stylesCache.background![rgb];
-            bgCache.setValue(row, col, rgb);
-            const cellInfo = this.getCellByIndexWithNoHeader(row, col);
-            this._stylesCache.backgroundPositions?.setValue(row, col, cellInfo);
+            this._stylesCache.bgGroupMatrix[rgb].setValue(row, col, rgb);
         }
     }
 
@@ -1833,13 +1841,12 @@ export class SpreadsheetSkeleton extends Skeleton {
                 wrapStrategy,
             };
             this._stylesCache.fontMatrix.setValue(row, col, config);
-            // fontFamilyMatrix.setValue(row, col, config);
             this._calculateOverflowCell(row, col, config);
         }
     }
 
     /**
-     * Set border background and font to this._stylesCache
+     * Set border & background and font to this._stylesCache
      * @param row {number}
      * @param col {number}
      * @param options {{ mergeRange: IRange; cacheItem: ICacheItem } | undefined}
@@ -1998,7 +2005,7 @@ export class SpreadsheetSkeleton extends Skeleton {
      * In Excel, for the border rendering of merged cells to take effect, the outermost cells need to have the same border style.
      */
     private _setMergeBorderProps(type: BORDER_TYPE, cache: IStylesCache, mergeRange: IRange): void {
-        if (!this.worksheet || !cache.border) {
+        if (!this.worksheet || !cache.borderMatrix) {
             return;
         }
 
@@ -2071,10 +2078,10 @@ export class SpreadsheetSkeleton extends Skeleton {
         if (isAddBorders) {
             borders.forEach((border) => {
                 const { r, c, style, color } = border;
-                if (!cache.border!.getValue(r, c)) {
-                    cache.border!.setValue(r, c, {});
+                if (!cache.borderMatrix!.getValue(r, c)) {
+                    cache.borderMatrix!.setValue(r, c, {});
                 }
-                cache.border!.getValue(r, c)![type] = {
+                cache.borderMatrix!.getValue(r, c)![type] = {
                     type,
                     style,
                     color,
@@ -2085,12 +2092,12 @@ export class SpreadsheetSkeleton extends Skeleton {
 
     private _setBorderProps(r: number, c: number, type: BORDER_TYPE, style: IStyleData, cache: IStylesCache): void {
         const props: Nullable<IBorderStyleData> = style.bd?.[type];
-        if (!props || !cache.border) {
+        if (!props || !cache.borderMatrix) {
             return;
         }
         const rgb = getColorStyle(props.cl) || COLOR_BLACK_RGB;
 
-        const borderCache = cache.border;
+        const borderCache = cache.borderMatrix;
 
         if (!borderCache.getValue(r, c)) {
             borderCache.setValue(r, c, { [type]: {} });
