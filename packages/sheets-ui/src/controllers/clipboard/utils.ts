@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-import type { IAccessor, ICellData, ICustomRange, IDocumentBody, IMutationInfo, IParagraph, IRange, Nullable } from '@univerjs/core';
 import { cellToRange, CustomRangeType, DataStreamTreeTokenType, DEFAULT_STYLES, generateRandomId, IUniverInstanceService, numfmt, ObjectMatrix, Range, Rectangle, Tools } from '@univerjs/core';
-import type {
-    IAddWorksheetMergeMutationParams,
-    IMoveRangeMutationParams,
-    IRemoveWorksheetMergeMutationParams,
-    ISetRangeValuesMutationParams,
-    ISetSelectionsOperationParams,
-} from '@univerjs/sheets';
+import { DEFAULT_PADDING_DATA } from '@univerjs/engine-render';
 import {
     AddMergeUndoMutationFactory,
     AddWorksheetMergeMutation,
@@ -36,11 +29,41 @@ import {
     SetSelectionsOperation,
     SheetInterceptorService,
 } from '@univerjs/sheets';
+import type { IAccessor, ICellData, ICustomRange, IDocumentBody, IMutationInfo, IParagraph, IRange, Nullable } from '@univerjs/core';
 
-import { DEFAULT_PADDING_DATA } from '@univerjs/engine-render';
-import type { ICellDataWithSpanInfo, ICopyPastePayload, ISheetDiscreteRangeLocation } from '../../services/clipboard/type';
+import type {
+    IAddWorksheetMergeMutationParams,
+    IMoveRangeMutationParams,
+    IRemoveWorksheetMergeMutationParams,
+    ISetRangeValuesMutationParams,
+    ISetSelectionsOperationParams,
+} from '@univerjs/sheets';
 import { COPY_TYPE } from '../../services/clipboard/type';
 import { discreteRangeToRange, type IDiscreteRange, virtualizeDiscreteRanges } from '../utils/range-tools';
+import type { ICellDataWithSpanInfo, ICopyPastePayload, ISheetDiscreteRangeLocation } from '../../services/clipboard/type';
+
+export function transposeObjectMatrix(matrix: ObjectMatrix<ICellDataWithSpanInfo>): ObjectMatrix<ICellDataWithSpanInfo> {
+    const newMatrix = new ObjectMatrix<ICellDataWithSpanInfo>();
+    matrix.forValue((row, col, value) => {
+        if ((value.rowSpan && value.rowSpan > 1) || (value.colSpan && value.colSpan > 1)) {
+            const { rowSpan, colSpan } = value;
+            value.rowSpan = colSpan;
+            value.colSpan = rowSpan;
+        }
+        newMatrix.setValue(col, row, value);
+    });
+    return newMatrix;
+}
+
+export function getTransposePasteMutations(
+    pasteFrom: ISheetDiscreteRangeLocation,
+    pasteTo: ISheetDiscreteRangeLocation,
+    data: ObjectMatrix<ICellDataWithSpanInfo>,
+    payload: ICopyPastePayload,
+    accessor: IAccessor
+) {
+
+}
 
 // if special paste need append mutations instead of replace the default, it can use this function to generate default mutations.
 export function getDefaultOnPasteCellMutations(

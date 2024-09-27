@@ -75,6 +75,7 @@ export const PREDEFINED_HOOK_NAME = {
     SPECIAL_PASTE_COL_WIDTH: 'special-paste-col-width',
     SPECIAL_PASTE_BESIDES_BORDER: 'special-paste-besides-border',
     SPECIAL_PASTE_FORMULA: 'special-paste-formula',
+    SPECIAL_PASTE_TRANSPOSE: 'special-paste-transpose',
 };
 
 interface ICopyContent {

@@ -834,7 +834,20 @@ export class SheetClipboardController extends RxDisposable {
             },
         };
 
-        return [specialPasteValueHook, specialPasteFormatHook, specialPasteColWidthHook, specialPasteBesidesBorder];
+        const specialPasteTransposeHook: ISheetClipboardHook = {
+            id: PREDEFINED_HOOK_NAME.SPECIAL_PASTE_TRANSPOSE,
+            specialPasteInfo: {
+                label: 'specialPaste.transpose',
+            },
+            onPasteCells: (pasteFrom, pasteTo, matrix, payload) => {
+                return {
+                    redos: [],
+                    undos: [],
+                };
+            },
+        };
+
+        return [specialPasteValueHook, specialPasteFormatHook, specialPasteColWidthHook, specialPasteBesidesBorder, specialPasteTransposeHook];
     }
 
     private _getWorksheet(unitId: string, subUnitId: string): Worksheet {
