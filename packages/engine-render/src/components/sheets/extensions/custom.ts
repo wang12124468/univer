@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { Range, sortRules } from '@univerjs/core';
 import type { IRange, IScale } from '@univerjs/core';
-import { SpreadsheetExtensionRegistry } from '../../extension';
-import { SheetExtension } from './sheet-extension';
 import type { UniverRenderingContext } from '../../../context';
 import type { SpreadsheetSkeleton } from '../sheet-skeleton';
+import { Range, sortRules } from '@univerjs/core';
+import { SpreadsheetExtensionRegistry } from '../../extension';
+import { SheetExtension } from './sheet-extension';
 
 const UNIQUE_KEY = 'DefaultCustomExtension';
 
@@ -47,7 +47,7 @@ export class Custom extends SheetExtension {
             if (!worksheet.getRowVisible(row) || !worksheet.getColVisible(col)) {
                 return;
             }
-            let cellData = worksheet.getCell(row, col);
+            let cellData = worksheet.getCellStyleOnly(row, col);
             if (!cellData?.customRender) {
                 return;
             }
@@ -73,7 +73,7 @@ export class Custom extends SheetExtension {
                     row: mergeInfo.startRow,
                     col: mergeInfo.startColumn,
                 };
-                cellData = worksheet.getCell(mainCell.row, mainCell.col);
+                cellData = worksheet.getCellStyleOnly(mainCell.row, mainCell.col);
                 if (!cellData?.customRender) {
                     return;
                 }

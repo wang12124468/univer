@@ -14,34 +14,6 @@
  * limitations under the License.
  */
 
-/* eslint-disable max-lines-per-function */
-/* eslint-disable no-param-reassign */
-import {
-    BooleanNumber,
-    BuildTextUtils,
-    CellValueType,
-    CustomRangeType,
-    DEFAULT_EMPTY_DOCUMENT_VALUE,
-    DEFAULT_STYLES,
-    DocumentDataModel,
-    extractPureTextFromCell,
-    getColorStyle,
-    HorizontalAlign,
-    IContextService,
-    Inject,
-    isCellCoverable,
-    isNullCell,
-    isWhiteColor,
-    LocaleService,
-    ObjectMatrix,
-    searchArray,
-    TextX,
-    Tools,
-    VerticalAlign,
-    WrapStrategy,
-} from '@univerjs/core';
-import { distinctUntilChanged, startWith } from 'rxjs';
-
 import type {
     BorderStyleTypes,
     IBorderStyleData,
@@ -71,6 +43,37 @@ import type {
     TextDirection,
     Worksheet,
 } from '@univerjs/core';
+import type { IDocumentSkeletonColumn } from '../../basics/i-document-skeleton-cached';
+
+import type { IBoundRectNoAngle, IViewportInfo } from '../../basics/vector2';
+import type { BorderCache, IFontCacheItem, IStylesCache } from './interfaces';
+/* eslint-disable max-lines-per-function */
+/* eslint-disable no-param-reassign */
+import {
+    BooleanNumber,
+    BuildTextUtils,
+    CellValueType,
+    CustomRangeType,
+    DEFAULT_EMPTY_DOCUMENT_VALUE,
+    DEFAULT_STYLES,
+    DocumentDataModel,
+    extractPureTextFromCell,
+    getColorStyle,
+    HorizontalAlign,
+    IContextService,
+    Inject,
+    isCellCoverable,
+    isNullCell,
+    isWhiteColor,
+    LocaleService,
+    ObjectMatrix,
+    searchArray,
+    TextX,
+    Tools,
+    VerticalAlign,
+    WrapStrategy,
+} from '@univerjs/core';
+import { distinctUntilChanged, startWith } from 'rxjs';
 import { BORDER_TYPE, COLOR_BLACK_RGB, MAXIMUM_ROW_HEIGHT } from '../../basics/const';
 import { getRotateOffsetAndFarthestHypotenuse } from '../../basics/draw';
 import { convertTextRotation, VERTICAL_ROTATE_ANGLE } from '../../basics/text-rotation';
@@ -86,9 +89,6 @@ import { DocumentSkeleton } from '../docs/layout/doc-skeleton';
 import { columnIterator } from '../docs/layout/tools';
 import { DocumentViewModel } from '../docs/view-model/document-view-model';
 import { Skeleton } from '../skeleton';
-import type { IDocumentSkeletonColumn } from '../../basics/i-document-skeleton-cached';
-import type { IBoundRectNoAngle, IViewportInfo } from '../../basics/vector2';
-import type { BorderCache, colorString, IFontCacheItem, IStylesCache } from './interfaces';
 
 function addLinkToDocumentModel(documentModel: DocumentDataModel, linkUrl: string, linkId: string): void {
     const body = documentModel.getBody()!;
@@ -2040,7 +2040,7 @@ export class SpreadsheetSkeleton extends Skeleton {
                 row = i;
             }
 
-            const cell = this.worksheet.getCell(row, column);
+            const cell = this.worksheet.getCellStyleOnly(row, column);
             if (!cell) {
                 isAddBorders = false;
                 break;

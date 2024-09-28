@@ -17,19 +17,19 @@
 /* eslint-disable max-lines-per-function */
 /* eslint-disable complexity */
 
-import { HorizontalAlign, Range, WrapStrategy } from '@univerjs/core';
 import type { ICellDataForSheetInterceptor, IRange, IScale, Nullable, ObjectMatrix } from '@univerjs/core';
+import type { UniverRenderingContext } from '../../../context';
+import type { Documents } from '../../docs/document';
+import type { IDrawInfo } from '../../extension';
+import type { IFontCacheItem } from '../interfaces';
+import type { SheetComponent } from '../sheet-component';
+import { HorizontalAlign, Range, WrapStrategy } from '@univerjs/core';
 import { FIX_ONE_PIXEL_BLUR_OFFSET } from '../../../basics';
 import { VERTICAL_ROTATE_ANGLE } from '../../../basics/text-rotation';
 import { clampRange, inViewRanges } from '../../../basics/tools';
 import { SpreadsheetExtensionRegistry } from '../../extension';
 import { getDocsSkeletonPageSize, type SpreadsheetSkeleton } from '../sheet-skeleton';
 import { SheetExtension } from './sheet-extension';
-import type { UniverRenderingContext } from '../../../context';
-import type { Documents } from '../../docs/document';
-import type { IDrawInfo } from '../../extension';
-import type { IFontCacheItem } from '../interfaces';
-import type { SheetComponent } from '../sheet-component';
 
 const UNIQUE_KEY = 'DefaultFontExtension';
 const EXTENSION_Z_INDEX = 45;
