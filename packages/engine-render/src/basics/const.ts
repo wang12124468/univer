@@ -99,7 +99,7 @@ export enum DOCUMENT_CONTEXT_CLIP_TYPE {
 
 export const COLOR_BLACK_RGB = 'rgb(0,0,0)';
 
-export enum BORDER_TYPE {
+export enum BORDER_LTRB {
     TOP = 't',
     BOTTOM = 'b',
     LEFT = 'l',

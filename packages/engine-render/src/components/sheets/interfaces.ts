@@ -17,13 +17,12 @@
 import type {
     BorderStyleTypes,
     HorizontalAlign,
-    ISelectionCellWithMergeInfo,
     ObjectMatrix,
     VerticalAlign,
     WrapStrategy,
 } from '@univerjs/core';
 
-import type { BORDER_TYPE } from '../../basics/const';
+import type { BORDER_LTRB } from '../../basics/const';
 import type { Canvas } from '../../canvas';
 import type { UniverRenderingContext } from '../../context';
 import type { DocumentSkeleton } from '../docs/layout/doc-skeleton';
@@ -33,7 +32,7 @@ export interface BorderCache {
 }
 
 export interface BorderCacheItem {
-    type: BORDER_TYPE;
+    type: BORDER_LTRB;
     style: BorderStyleTypes;
     color: string;
 }

@@ -74,7 +74,7 @@ import {
     WrapStrategy,
 } from '@univerjs/core';
 import { distinctUntilChanged, startWith } from 'rxjs';
-import { BORDER_TYPE, COLOR_BLACK_RGB, MAXIMUM_ROW_HEIGHT } from '../../basics/const';
+import { BORDER_LTRB, COLOR_BLACK_RGB, MAXIMUM_ROW_HEIGHT } from '../../basics/const';
 import { getRotateOffsetAndFarthestHypotenuse } from '../../basics/draw';
 import { convertTextRotation, VERTICAL_ROTATE_ANGLE } from '../../basics/text-rotation';
 import {
@@ -89,6 +89,7 @@ import { DocumentSkeleton } from '../docs/layout/doc-skeleton';
 import { columnIterator } from '../docs/layout/tools';
 import { DocumentViewModel } from '../docs/view-model/document-view-model';
 import { Skeleton } from '../skeleton';
+import { EXPAND_SIZE_FOR_RENDER_OVERFLOW } from './constants';
 
 function addLinkToDocumentModel(documentModel: DocumentDataModel, linkUrl: string, linkId: string): void {
     const body = documentModel.getBody()!;
@@ -251,7 +252,7 @@ export class SpreadsheetSkeleton extends Skeleton {
     /**
      * Range of visible area(range in viewBounds)
      */
-    private _rowColumnSegment: IRowColumnRange = {
+    private _visibleRange: IRowColumnRange = {
         startRow: -1,
         endRow: -1,
         startColumn: -1,
@@ -326,7 +327,7 @@ export class SpreadsheetSkeleton extends Skeleton {
      * Range of visible area(range in viewBounds)
      */
     get rowColumnSegment(): IRowColumnRange {
-        return this._rowColumnSegment;
+        return this._visibleRange;
     }
 
     // get dataMergeCache(): IRange[] {
@@ -366,7 +367,7 @@ export class SpreadsheetSkeleton extends Skeleton {
         this._columnTotalWidth = 0;
         this._rowHeaderWidth = 0;
         this._columnHeaderHeight = 0;
-        this._rowColumnSegment = {
+        this._visibleRange = {
             startRow: -1,
             endRow: -1,
             startColumn: -1,
@@ -449,7 +450,7 @@ export class SpreadsheetSkeleton extends Skeleton {
         }
 
         if (bounds != null) {
-            this._rowColumnSegment = this.getRowColumnSegment(bounds);
+            this._visibleRange = this.getRowColumnSegment(bounds);
         }
 
         return true;
@@ -473,9 +474,7 @@ export class SpreadsheetSkeleton extends Skeleton {
 
     calculate(bounds?: IViewportInfo): Nullable<SpreadsheetSkeleton> {
         this._resetCache();
-
         this.calculateWithoutClearingCache(bounds);
-
         return this;
     }
 
@@ -770,8 +769,6 @@ export class SpreadsheetSkeleton extends Skeleton {
 
         let startColumn = column;
         let endColumn = column;
-
-        // console.log('documentSkeleton', cell?.v, column, endColumn, row, column, columnCount, contentWidth);
 
         if (horizontalAlign === HorizontalAlign.CENTER) {
             startColumn = this._getOverflowBound(row, column, 0, contentWidth / 2, horizontalAlign);
@@ -1229,7 +1226,6 @@ export class SpreadsheetSkeleton extends Skeleton {
                     wrapStrategy,
                 }
             );
-            // console.log(cell.p);
         } else if (cell.v != null) {
             const textStyle = this._getFontFormat(style);
             fontString = getFontStyleString(textStyle, this._localService).fontCache;
@@ -1690,9 +1686,9 @@ export class SpreadsheetSkeleton extends Skeleton {
     }
 
     private _calculateStylesCache(): void {
-        const rowColumnSegment = this._rowColumnSegment;
+        const visibleRange = this._visibleRange;
         const columnWidthAccumulation = this.columnWidthAccumulation;
-        const { startRow, endRow, startColumn, endColumn } = rowColumnSegment;
+        const { startRow, endRow, startColumn, endColumn } = visibleRange;
 
         if (endColumn === -1 || endRow === -1) return;
 
@@ -1714,13 +1710,13 @@ export class SpreadsheetSkeleton extends Skeleton {
             }
 
             // Calculate the text length for overflow situations, focusing on the leftmost column within the visible range.
-            for (let c = 0; c < startColumn; c++) {
+            for (let c = Math.max(startRow - EXPAND_SIZE_FOR_RENDER_OVERFLOW); c < startColumn; c++) {
                 this._setStylesCache(r, c, { cacheItem: { bg: false, border: false } });
             }
             if (endColumn === 0) continue;
 
             // Calculate the text length for overflow situations, focusing on the rightmost column within the visible range.
-            for (let c = endColumn + 1; c < columnWidthAccumulation.length; c++) {
+            for (let c = endColumn + 1; c < Math.min(endColumn + EXPAND_SIZE_FOR_RENDER_OVERFLOW, columnWidthAccumulation.length); c++) {
                 this._setStylesCache(r, c, { cacheItem: { bg: false, border: false } });
             }
         }
@@ -1740,6 +1736,7 @@ export class SpreadsheetSkeleton extends Skeleton {
         this._handleBgMatrix.reset();
         this._handleBorderMatrix.reset();
         this._overflowCache.reset();
+        this._renderCellDataMatrix.reset();
     }
 
     private _makeDocumentSkeletonDirty(row: number, col: number): void {
@@ -1761,23 +1758,23 @@ export class SpreadsheetSkeleton extends Skeleton {
         if (style && style.bd) {
             const mergeRange = options?.mergeRange;
             if (mergeRange) {
-                this._setMergeBorderProps(BORDER_TYPE.TOP, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.BOTTOM, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.LEFT, this._stylesCache, mergeRange);
-                this._setMergeBorderProps(BORDER_TYPE.RIGHT, this._stylesCache, mergeRange);
+                this._setMergeBorderProps(BORDER_LTRB.TOP, mergeRange);
+                this._setMergeBorderProps(BORDER_LTRB.BOTTOM, mergeRange);
+                this._setMergeBorderProps(BORDER_LTRB.LEFT, mergeRange);
+                this._setMergeBorderProps(BORDER_LTRB.RIGHT, mergeRange);
             } else if (!this.intersectMergeRange(row, col)) {
-                this._setBorderProps(row, col, BORDER_TYPE.TOP, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.BOTTOM, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.LEFT, style, this._stylesCache);
-                this._setBorderProps(row, col, BORDER_TYPE.RIGHT, style, this._stylesCache);
+                this._setBorderProps(row, col, BORDER_LTRB.TOP, style);
+                this._setBorderProps(row, col, BORDER_LTRB.BOTTOM, style);
+                this._setBorderProps(row, col, BORDER_LTRB.LEFT, style);
+                this._setBorderProps(row, col, BORDER_LTRB.RIGHT, style);
             }
 
-            this._setBorderProps(row, col, BORDER_TYPE.TL_BR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.TL_BC, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.TL_MR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.BL_TR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.ML_TR, style, this._stylesCache);
-            this._setBorderProps(row, col, BORDER_TYPE.BC_TR, style, this._stylesCache);
+            this._setBorderProps(row, col, BORDER_LTRB.TL_BR, style);
+            this._setBorderProps(row, col, BORDER_LTRB.TL_BC, style);
+            this._setBorderProps(row, col, BORDER_LTRB.TL_MR, style);
+            this._setBorderProps(row, col, BORDER_LTRB.BL_TR, style);
+            this._setBorderProps(row, col, BORDER_LTRB.ML_TR, style);
+            this._setBorderProps(row, col, BORDER_LTRB.BC_TR, style);
         }
     }
 
@@ -1842,6 +1839,16 @@ export class SpreadsheetSkeleton extends Skeleton {
         }
     }
 
+    _renderCellDataMatrix: ObjectMatrix<Nullable<ICellData>> = new ObjectMatrix();
+    getCellForRender(row: number, col: number) {
+        if (!this._renderCellDataMatrix.getValue(row, col)) {
+            const v = this.worksheet.getCell(row, col) || this.worksheet.getCellRaw(row, col);
+            this._renderCellDataMatrix.setValue(row, col);
+            return v;
+        }
+        return this._renderCellDataMatrix.getValue(row, col);
+    }
+
     /**
      * Set border & background and font to this._stylesCache
      * @param row {number}
@@ -1853,13 +1860,13 @@ export class SpreadsheetSkeleton extends Skeleton {
             return;
         }
 
-        const handledBgCell = Tools.isDefine(this._handleBgMatrix.getValue(row, col));
-        const handledBorderCell = Tools.isDefine(this._handleBorderMatrix.getValue(row, col));
+        // const handledBgCell = Tools.isDefine(this._handleBgMatrix.getValue(row, col));
+        // const handledBorderCell = Tools.isDefine(this._handleBorderMatrix.getValue(row, col));
 
-        // worksheet.getCell has significant performance overhead, if we had handled this cell then return first.
-        if (handledBgCell && handledBorderCell) {
-            return;
-        }
+        // // worksheet.getCell has significant performance overhead, if we had handled this cell then return first.
+        // if (handledBgCell && handledBorderCell) {
+        //     return;
+        // }
 
         if (!options) {
             options = { cacheItem: { bg: true, border: true } };
@@ -1883,7 +1890,7 @@ export class SpreadsheetSkeleton extends Skeleton {
             }
         }
 
-        const cell = this.worksheet.getCell(row, col) || this.worksheet.getCellRaw(row, col);
+        const cell = this.getCellForRender(row, col); //this.worksheet.getCell(row, col) || this.worksheet.getCellRaw(row, col);
         const style = this._styles.getStyleByCell(cell);
         this._setBgStylesCache(row, col, style, options);
         this._setBorderStylesCache(row, col, style, options);
@@ -2001,7 +2008,8 @@ export class SpreadsheetSkeleton extends Skeleton {
      * pro/issues/344
      * In Excel, for the border rendering of merged cells to take effect, the outermost cells need to have the same border style.
      */
-    private _setMergeBorderProps(type: BORDER_TYPE, cache: IStylesCache, mergeRange: IRange): void {
+    private _setMergeBorderProps(ltrb: BORDER_LTRB, mergeRange: IRange): void {
+        const cache = this._stylesCache;
         if (!this.worksheet || !cache.borderMatrix) {
             return;
         }
@@ -2011,59 +2019,63 @@ export class SpreadsheetSkeleton extends Skeleton {
 
         let forStart = mergeRange.startRow;
         let forEnd = mergeRange.endRow;
-
         let row = mergeRange.startRow;
+        let col = mergeRange.startColumn;
 
-        let column = mergeRange.startColumn;
-
-        if (type === BORDER_TYPE.TOP) {
-            row = mergeRange.startRow;
-            forStart = mergeRange.startColumn;
-            forEnd = mergeRange.endColumn;
-        } else if (type === BORDER_TYPE.BOTTOM) {
-            row = mergeRange.endRow;
-            forStart = mergeRange.startColumn;
-            forEnd = mergeRange.endColumn;
-        } else if (type === BORDER_TYPE.LEFT) {
-            column = mergeRange.startColumn;
-            forStart = mergeRange.startRow;
-            forEnd = mergeRange.endRow;
-        } else if (type === BORDER_TYPE.RIGHT) {
-            column = mergeRange.endColumn;
-            forStart = mergeRange.startRow;
-            forEnd = mergeRange.endRow;
+        switch (ltrb) {
+            case BORDER_LTRB.TOP:
+                row = mergeRange.startRow;
+                forStart = mergeRange.startColumn;
+                forEnd = mergeRange.endColumn;
+                break;
+            case BORDER_LTRB.BOTTOM:
+                row = mergeRange.endRow;
+                forStart = mergeRange.startColumn;
+                forEnd = mergeRange.endColumn;
+                break;
+            case BORDER_LTRB.LEFT:
+                col = mergeRange.startColumn;
+                forStart = mergeRange.startRow;
+                forEnd = mergeRange.endRow;
+                break;
+            case BORDER_LTRB.RIGHT:
+                col = mergeRange.endColumn;
+                forStart = mergeRange.startRow;
+                forEnd = mergeRange.endRow;
+                break;
         }
 
         for (let i = forStart; i <= forEnd; i++) {
-            if (type === BORDER_TYPE.TOP) {
-                column = i;
-            } else if (type === BORDER_TYPE.BOTTOM) {
-                column = i;
-            } else if (type === BORDER_TYPE.LEFT) {
-                row = i;
-            } else if (type === BORDER_TYPE.RIGHT) {
-                row = i;
+            switch (ltrb) {
+                case BORDER_LTRB.TOP:
+                case BORDER_LTRB.BOTTOM:
+                    col = i;
+                    break;
+                case BORDER_LTRB.LEFT:
+                case BORDER_LTRB.RIGHT:
+                    row = i;
+                    break;
             }
-
-            const cell = this.worksheet.getCell(row, column);
+            // const cell = this.worksheet.getCellStyleOnly(row, col); // DO IT AGAIN???
+            const cell = this.getCellForRender(row, col);
             if (!cell) {
                 isAddBorders = false;
                 break;
             }
 
-            const style = this._styles.getStyleByCell(cell);
+            const style = this._styles.getStyleByCell(cell); // DO IT AGAIN???
 
             if (!style) {
                 isAddBorders = false;
                 break;
             }
 
-            const props: Nullable<IBorderStyleData> = style.bd?.[type];
+            const props: Nullable<IBorderStyleData> = style.bd?.[ltrb];
             if (props) {
                 const rgb = getColorStyle(props.cl) || COLOR_BLACK_RGB;
                 borders.push({
                     r: row,
-                    c: column,
+                    c: col,
                     style: props.s,
                     color: rgb,
                 });
@@ -2078,8 +2090,8 @@ export class SpreadsheetSkeleton extends Skeleton {
                 if (!cache.borderMatrix!.getValue(r, c)) {
                     cache.borderMatrix!.setValue(r, c, {});
                 }
-                cache.borderMatrix!.getValue(r, c)![type] = {
-                    type,
+                cache.borderMatrix!.getValue(r, c)![ltrb] = {
+                    type: ltrb,
                     style,
                     color,
                 };
@@ -2087,7 +2099,8 @@ export class SpreadsheetSkeleton extends Skeleton {
         }
     }
 
-    private _setBorderProps(r: number, c: number, type: BORDER_TYPE, style: IStyleData, cache: IStylesCache): void {
+    private _setBorderProps(r: number, c: number, type: BORDER_LTRB, style: IStyleData): void {
+        const cache = this._stylesCache;
         const props: Nullable<IBorderStyleData> = style.bd?.[type];
         if (!props || !cache.borderMatrix) {
             return;
@@ -2106,13 +2119,13 @@ export class SpreadsheetSkeleton extends Skeleton {
          * When the top border of a cell and the bottom border of the cell above it (r-1) overlap,
          * if the top border of cell r is white, then the rendering is ignored.
          */
-        if (type === BORDER_TYPE.TOP) {
-            const borderBottom = borderCache.getValue(r - 1, c)?.[BORDER_TYPE.BOTTOM];
+        if (type === BORDER_LTRB.TOP) {
+            const borderBottom = borderCache.getValue(r - 1, c)?.[BORDER_LTRB.BOTTOM];
             if (borderBottom && isWhiteColor(rgb)) {
                 return;
             }
-        } else if (type === BORDER_TYPE.LEFT) {
-            const borderRight = borderCache.getValue(r, c - 1)?.[BORDER_TYPE.RIGHT];
+        } else if (type === BORDER_LTRB.LEFT) {
+            const borderRight = borderCache.getValue(r, c - 1)?.[BORDER_LTRB.RIGHT];
             if (borderRight && isWhiteColor(rgb)) {
                 return;
             }
