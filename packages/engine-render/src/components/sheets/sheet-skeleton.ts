@@ -89,9 +89,6 @@ import { DocumentSkeleton } from '../docs/layout/doc-skeleton';
 import { columnIterator } from '../docs/layout/tools';
 import { DocumentViewModel } from '../docs/view-model/document-view-model';
 import { Skeleton } from '../skeleton';
-import type { IDocumentSkeletonColumn } from '../../basics/i-document-skeleton-cached';
-import type { IBoundRectNoAngle, IViewportInfo } from '../../basics/vector2';
-import type { BorderCache, colorString, IFontCacheItem, IStylesCache } from './interfaces';
 
 function addLinkToDocumentModel(documentModel: DocumentDataModel, linkUrl: string, linkId: string): void {
     const body = documentModel.getBody()!;
