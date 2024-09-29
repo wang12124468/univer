@@ -152,6 +152,7 @@ export class SheetsDataValidationRenderController extends RxDisposable {
         };
 
         this.disposeWithMe(this._sheetDataValidationModel.ruleChange$.pipe(debounceTime(16)).subscribe(() => markSkeletonDirty()));
+        // has performance issue, this function would clear skeleton cache.
         // this.disposeWithMe(this._sheetDataValidationModel.validStatusChange$.pipe(debounceTime(16)).subscribe(() => markSkeletonDirty()));
     }
 
