@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import type { CellValue, ICellRenderContext, IRange, Nullable, Workbook } from '@univerjs/core';
+import type { Spreadsheet } from '@univerjs/engine-render';
 import { DataValidationStatus, DataValidationType, ICommandService, Inject, InterceptorEffectEnum, IUniverInstanceService, LifecycleStages, OnLifecycle, Optional, RxDisposable, sequenceExecute, UniverInstanceType } from '@univerjs/core';
 import { DataValidatorRegistryService } from '@univerjs/data-validation';
 import { IRenderManagerService } from '@univerjs/engine-render';
@@ -21,8 +23,6 @@ import { InterceptCellContentPriority, INTERCEPTOR_POINT, SheetInterceptorServic
 import { AutoHeightController, IEditorBridgeService, SheetSkeletonManagerService } from '@univerjs/sheets-ui';
 import { IMenuManagerService } from '@univerjs/ui';
 import { bufferTime, debounceTime, filter } from 'rxjs';
-import type { CellValue, ICellRenderContext, IRange, Nullable, Workbook } from '@univerjs/core';
-import type { Spreadsheet } from '@univerjs/engine-render';
 import { SheetDataValidationModel } from '../models/sheet-data-validation-model';
 import { DataValidationDropdownManagerService } from '../services/dropdown-manager.service';
 import { getCellValueOrigin } from '../utils/get-cell-data-origin';
@@ -152,7 +152,7 @@ export class SheetsDataValidationRenderController extends RxDisposable {
         };
 
         this.disposeWithMe(this._sheetDataValidationModel.ruleChange$.pipe(debounceTime(16)).subscribe(() => markSkeletonDirty()));
-        this.disposeWithMe(this._sheetDataValidationModel.validStatusChange$.pipe(debounceTime(16)).subscribe(() => markSkeletonDirty()));
+        // this.disposeWithMe(this._sheetDataValidationModel.validStatusChange$.pipe(debounceTime(16)).subscribe(() => markSkeletonDirty()));
     }
 
     // eslint-disable-next-line max-lines-per-function
@@ -449,4 +449,3 @@ export class SheetsDataValidationMobileRenderController extends RxDisposable {
             });
     }
 }
-
