@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { ICellData, IMutation, IObjectMatrixPrimitiveType, IRange, Nullable, Workbook } from '@univerjs/core';
+import type { ICellData, IExecutionOptions, IMutation, IObjectMatrixPrimitiveType, IRange, IStyleData, Nullable, Workbook } from '@univerjs/core';
 import { CommandType, IUniverInstanceService, ObjectMatrix, UniverInstanceType } from '@univerjs/core';
 
 export interface IMoveRangeMutationParams {
@@ -34,7 +34,7 @@ export interface IMoveRangeMutationParams {
 export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
     id: 'sheet.mutation.move-range',
     type: CommandType.MUTATION,
-    handler: (accessor, params) => {
+    handler: (accessor, params, options?:IExecutionOptions) => {
         const { from, to } = params;
 
         if (!from || !to) {
@@ -57,11 +57,22 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const fromCellMatrix = fromWorksheet.getCellMatrix();
         const toCellMatrix = toWorksheet.getCellMatrix();
 
+        let originStyleWhenCollab: Nullable<string | IStyleData> = '';
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
+            if(options?.fromCollab) {
+                const fromCellValue = fromCellMatrix.getValue(row, col);
+                originStyleWhenCollab = fromCellValue?.s;
+                console.log('fromCellMatrix', fromCellValue);
+            }
             fromCellMatrix.setValue(row, col, newVal);
         });
 
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
+            console.log('newVal', newVal, options);
+            if (newVal && options?.fromCollab) {
+                delete newVal?.s;
+                if(originStyleWhenCollab) newVal.s = originStyleWhenCollab;
+            }
             toCellMatrix.setValue(row, col, newVal);
         });
 
