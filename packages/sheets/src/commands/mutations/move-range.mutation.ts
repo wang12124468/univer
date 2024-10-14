@@ -16,6 +16,7 @@
 
 import type { ICellData, IExecutionOptions, IMutation, IObjectMatrixPrimitiveType, IRange, IStyleData, Nullable, Workbook } from '@univerjs/core';
 import { CommandType, IUniverInstanceService, ObjectMatrix, UniverInstanceType } from '@univerjs/core';
+import { handleStyle } from '../../basics/cell-style';
 
 export interface IMoveRangeMutationParams {
     unitId: string;
@@ -29,6 +30,10 @@ export interface IMoveRangeMutationParams {
         subUnitId: string;
         value: IObjectMatrixPrimitiveType<Nullable<ICellData>>;
     };
+}
+
+interface ICellStyleData  {
+    s: Nullable<string | IStyleData>
 }
 
 export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
@@ -57,21 +62,30 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const fromCellMatrix = fromWorksheet.getCellMatrix();
         const toCellMatrix = toWorksheet.getCellMatrix();
 
-        let originStyleWhenCollab: Nullable<string | IStyleData> = '';
+
+
+        let originStyleWhenCollab: ICellStyleData = {s: null};
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
             if(options?.fromCollab) {
                 const fromCellValue = fromCellMatrix.getValue(row, col);
-                originStyleWhenCollab = fromCellValue?.s;
-                console.log('fromCellMatrix', fromCellValue);
+                originStyleWhenCollab = { s: fromCellValue?.s || null };
             }
             fromCellMatrix.setValue(row, col, newVal);
         });
 
+        const workbookStyles = workbook.getStyles();
+
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
-            console.log('newVal', newVal, options);
-            if (newVal && options?.fromCollab) {
-                delete newVal?.s;
-                if(originStyleWhenCollab) newVal.s = originStyleWhenCollab;
+            if (newVal && newVal.s && options?.fromCollab) {
+
+                let styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
+                if(!styleHash) {
+                    handleStyle(workbookStyles, originStyleWhenCollab, {s: newVal.s});
+                    styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
+                }
+                if(styleHash) {
+                    newVal.s = styleHash;
+                }
             }
             toCellMatrix.setValue(row, col, newVal);
         });
