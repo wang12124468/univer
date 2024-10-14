@@ -32,14 +32,14 @@ export interface IMoveRangeMutationParams {
     };
 }
 
-interface ICellStyleData  {
-    s: Nullable<string | IStyleData>
+interface ICellStyleData {
+    s: Nullable<string | IStyleData>;
 }
 
 export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
     id: 'sheet.mutation.move-range',
     type: CommandType.MUTATION,
-    handler: (accessor, params, options?:IExecutionOptions) => {
+    handler: (accessor, params, options?: IExecutionOptions) => {
         const { from, to } = params;
 
         if (!from || !to) {
@@ -62,11 +62,9 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const fromCellMatrix = fromWorksheet.getCellMatrix();
         const toCellMatrix = toWorksheet.getCellMatrix();
 
-
-
-        let originStyleWhenCollab: ICellStyleData = {s: null};
+        let originStyleWhenCollab: ICellStyleData = { s: null };
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
-            if(options?.fromCollab) {
+            if (options?.fromCollab) {
                 const fromCellValue = fromCellMatrix.getValue(row, col);
                 originStyleWhenCollab = { s: fromCellValue?.s || null };
             }
@@ -77,13 +75,12 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
 
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
             if (newVal && newVal.s && options?.fromCollab) {
-
                 let styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
-                if(!styleHash) {
-                    handleStyle(workbookStyles, originStyleWhenCollab, {s: newVal.s});
+                if (!styleHash) {
+                    handleStyle(workbookStyles, originStyleWhenCollab, { s: newVal.s });
                     styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
                 }
-                if(styleHash) {
+                if (styleHash) {
                     newVal.s = styleHash;
                 }
             }
