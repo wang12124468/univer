@@ -178,7 +178,7 @@ export function getMoveRangeUndoRedoMutations(
 
             const styleValue = Tools.deepClone(fromCellStyle.getValue(row, col));
             const cellValue = Tools.deepClone(fromCellValue.getValue(row, col));
-            if (cellValue) {
+            if (cellValue && styleValue) {
                 cellValue.s = styleValue;
             }
             newToCellValue.setValue(range.startRow, range.startColumn, cellValue);
