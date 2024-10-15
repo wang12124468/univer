@@ -15,7 +15,7 @@
  */
 
 import type { ICellData, IMutation, IObjectMatrixPrimitiveType, IRange, IStyleData, Nullable, Workbook } from '@univerjs/core';
-import { CommandType, IUniverInstanceService, ObjectMatrix, UniverInstanceType } from '@univerjs/core';
+import { CommandType, IUniverInstanceService, ObjectMatrix, Tools, UniverInstanceType } from '@univerjs/core';
 import { handleStyle } from '../../basics/cell-style';
 
 export interface IMoveRangeMutationParams {
@@ -51,8 +51,8 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         if (!workbook) {
             return false;
         }
-        if(typeof window !== 'undefined'){
-            if(options?.fromCollab){
+        if (typeof window !== 'undefined') {
+            if (options?.fromCollab) {
                 window.collabWB = workbook;
             } else {
                 window.WB = workbook;
@@ -72,8 +72,8 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         let originStyleWhenCollab: ICellStyleData = { s: null };
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
             // if (options?.fromCollab) {
-                const fromCellValue = fromCellMatrix.getValue(row, col);
-                originStyleWhenCollab = { s: fromCellValue?.s || null };
+            const fromCellValue = fromCellMatrix.getValue(row, col);
+            originStyleWhenCollab = { s: fromCellValue?.s || null };
             // }
             fromCellMatrix.setValue(row, col, newVal);
         });
@@ -81,12 +81,16 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const workbookStyles = workbook.getStyles();
 
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
-
-            if(newVal && newVal.s && typeof window !== 'undefined'){
-                if(options && options?.fromCollab) {
-                    console.log('collab toCellMatrix newVal', newVal.s);
-                }else if(options.fromLocal){
-                    console.log('local toCellMatrix newVal', newVal.s);
+            if(newVal && newVal.s) {
+                console.log('newval s', newVal.s);
+            }
+            if (newVal && newVal.s && typeof window !== 'undefined') {
+                if (options) {
+                    if (options?.fromCollab) {
+                        console.log('collab toCellMatrix newVal', JSON.stringify(newVal));
+                    } else if (options.fromLocal) {
+                        console.log('local toCellMatrix newVal', JSON.stringify(newVal.s));
+                    }
                 }
             }
             if (newVal && newVal.s && typeof newVal.s == 'object') {
@@ -97,6 +101,7 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
                     styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
                 }
                 if (styleHash) {
+                    newVal = Tools.deepClone(newVal);
                     newVal.s = styleHash;
                 }
             }

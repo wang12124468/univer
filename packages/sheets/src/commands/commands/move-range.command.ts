@@ -159,10 +159,10 @@ export function getMoveRangeUndoRedoMutations(
             const cellData = fromCellMatrix.getValue(row, col);
             fromCellValue.setValue(row, col, Tools.deepClone(cellData));
             newFromCellValue.setValue(row, col, null);
-            if (cellData) {
-                const style = workbook?.getStyles().get(cellData.s);
-                fromCellStyle.setValue(row, col, Tools.deepClone(style));
-            }
+            // if (cellData) {
+            //     const styleData = workbook?.getStyles().get(cellData.s);
+            //     fromCellStyle.setValue(row, col, Tools.deepClone(styleData));
+            // }
         });
         const toCellValue = new ObjectMatrix<Nullable<ICellData>>();
         const newToCellValue = new ObjectMatrix<Nullable<ICellData>>();
@@ -186,15 +186,20 @@ export function getMoveRangeUndoRedoMutations(
             const relativeRange = Rectangle.getRelativeRange(cellRange, fromRange);
             const range = Rectangle.getPositionRange(relativeRange, toRange);
 
-            const styleValue = Tools.deepClone(fromCellStyle.getValue(row, col));
-            const cellValue = Tools.deepClone(fromCellValue.getValue(row, col));
-            if (cellValue && styleValue) {
-                cellValue.s = styleValue;
+            const cellData = Tools.deepClone(fromCellMatrix.getValue(row, col));
+            if (cellData) {
+                console.log('before', cellData)
+                const styleData = workbook?.getStyles().get(cellData.s);
+                // delete cellData.s;
+                cellData.s = styleData;
+                console.log('styledata', styleData)
+                console.log('after', JSON.stringify(cellData))
             }
-            console.log(row, col, 'newTOCellValue cellValue.s', cellValue?.s);
-            newToCellValue.setValue(range.startRow, range.startColumn, cellValue);
+            // console.log(row, col, 'newTOCellValue cellValue.s', 'set', range.startRow, range.startColumn, cellData);
+            newToCellValue.setValue(range.startRow, range.startColumn, cellData);
         });
-
+        // console.log('do toCell', toCellValue.getMatrix())
+        console.log('do newToCell', JSON.stringify(newToCellValue.getMatrix()))
         const doMoveRangeMutation: IMoveRangeMutationParams = {
             fromRange: from.range,
             toRange: to.range,
