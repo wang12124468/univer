@@ -16,6 +16,7 @@
 
 import type { ICellData, IMutation, IObjectMatrixPrimitiveType, IRange, IStyleData, Nullable, Workbook } from '@univerjs/core';
 import { CommandType, IUniverInstanceService, ObjectMatrix, UniverInstanceType } from '@univerjs/core';
+import { handleStyle } from '../../basics/cell-style';
 
 export interface IMoveRangeMutationParams {
     unitId: string;
@@ -38,7 +39,7 @@ interface ICellStyleData {
 export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
     id: 'sheet.mutation.move-range',
     type: CommandType.MUTATION,
-    handler: (accessor, params) => {
+    handler: (accessor, params, options?: IExecutionOptions) => {
         const { from, to } = params;
 
         if (!from || !to) {
@@ -49,6 +50,13 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
         if (!workbook) {
             return false;
+        }
+        if(typeof window !== 'undefined'){
+            if(options?.fromCollab){
+                window.collabWB = workbook;
+            } else {
+                window.WB = workbook;
+            }
         }
 
         const fromWorksheet = workbook.getSheetBySheetId(params.from.subUnitId);
@@ -61,29 +69,39 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
         const fromCellMatrix = fromWorksheet.getCellMatrix();
         const toCellMatrix = toWorksheet.getCellMatrix();
 
-        // let originStyleWhenCollab: ICellStyleData = { s: null };
+        let originStyleWhenCollab: ICellStyleData = { s: null };
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
             // if (options?.fromCollab) {
-            //     const fromCellValue = fromCellMatrix.getValue(row, col);
-            //     originStyleWhenCollab = { s: fromCellValue?.s || null };
+                const fromCellValue = fromCellMatrix.getValue(row, col);
+                originStyleWhenCollab = { s: fromCellValue?.s || null };
             // }
             fromCellMatrix.setValue(row, col, newVal);
         });
 
-        // const workbookStyles = workbook.getStyles();
+        const workbookStyles = workbook.getStyles();
 
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
-            // if (newVal && newVal.s && options?.fromCollab) {
-            //     let styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
-            //     if (!styleHash) {
-            //         handleStyle(workbookStyles, originStyleWhenCollab, { s: newVal.s });
-            //         styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
-            //     }
-            //     if (styleHash) {
-            //         newVal.s = styleHash;
-            //     }
-            // }
+
+            if(newVal && newVal.s && typeof window !== 'undefined'){
+                if(options && options?.fromCollab) {
+                    console.log('collab toCellMatrix newVal', newVal.s);
+                }else if(options.fromLocal){
+                    console.log('local toCellMatrix newVal', newVal.s);
+                }
+            }
+            if (newVal && newVal.s && typeof newVal.s == 'object') {
+
+                let styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
+                if (!styleHash) {
+                    handleStyle(workbookStyles, originStyleWhenCollab, { s: newVal.s });
+                    styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
+                }
+                if (styleHash) {
+                    newVal.s = styleHash;
+                }
+            }
             toCellMatrix.setValue(row, col, newVal);
+            // console.log('toCellMatrix', row, col, newVal);
         });
 
         return true;

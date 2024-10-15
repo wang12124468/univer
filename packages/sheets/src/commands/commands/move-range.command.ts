@@ -158,17 +158,27 @@ export function getMoveRangeUndoRedoMutations(
         Range.foreach(fromRange, (row, col) => {
             const cellData = fromCellMatrix.getValue(row, col);
             fromCellValue.setValue(row, col, Tools.deepClone(cellData));
+            newFromCellValue.setValue(row, col, null);
             if (cellData) {
                 const style = workbook?.getStyles().get(cellData.s);
                 fromCellStyle.setValue(row, col, Tools.deepClone(style));
             }
-            newFromCellValue.setValue(row, col, null);
         });
         const toCellValue = new ObjectMatrix<Nullable<ICellData>>();
         const newToCellValue = new ObjectMatrix<Nullable<ICellData>>();
 
         Range.foreach(toRange, (row, col) => {
-            toCellValue.setValue(row, col, Tools.deepClone(toCellMatrix.getValue(row, col)));
+
+            const cellData = Tools.deepClone(toCellMatrix.getValue(row, col));
+            if (cellData && cellData.s) {
+                const style = workbook?.getStyles().get(cellData.s);
+                const styleValue = Tools.deepClone(Tools.deepClone(style));
+                if(styleValue) {
+                    cellData.s = styleValue;
+                }
+            }
+            console.log(row, col, 'toCellValue cellValue.s', cellData?.s);
+            toCellValue.setValue(row, col, Tools.deepClone(cellData));
         });
 
         Range.foreach(fromRange, (row, col) => {
@@ -180,8 +190,8 @@ export function getMoveRangeUndoRedoMutations(
             const cellValue = Tools.deepClone(fromCellValue.getValue(row, col));
             if (cellValue && styleValue) {
                 cellValue.s = styleValue;
-                // console.log('cellValue.s', cellValue.s);
             }
+            console.log(row, col, 'newTOCellValue cellValue.s', cellValue?.s);
             newToCellValue.setValue(range.startRow, range.startColumn, cellValue);
         });
 
