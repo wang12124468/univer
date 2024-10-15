@@ -180,6 +180,7 @@ export function getMoveRangeUndoRedoMutations(
             const cellValue = Tools.deepClone(fromCellValue.getValue(row, col));
             if (cellValue && styleValue) {
                 cellValue.s = styleValue;
+                console.log('cellValue.s', cellValue.s);
             }
             newToCellValue.setValue(range.startRow, range.startColumn, cellValue);
         });

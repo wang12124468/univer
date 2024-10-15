@@ -64,23 +64,22 @@ export const MoveRangeMutation: IMutation<IMoveRangeMutationParams, boolean> = {
 
 
 
-        let originStyleWhenCollab: ICellStyleData = {s: null};
+        let originFromCellStyle: ICellStyleData = {s: null};
         new ObjectMatrix<Nullable<ICellData>>(from.value).forValue((row, col, newVal) => {
-            if(options?.fromCollab) {
-                const fromCellValue = fromCellMatrix.getValue(row, col);
-                originStyleWhenCollab = { s: fromCellValue?.s || null };
-            }
+            const fromCellValue = fromCellMatrix.getValue(row, col);
+            originFromCellStyle = { s: fromCellValue?.s || null };
+
             fromCellMatrix.setValue(row, col, newVal);
         });
 
         const workbookStyles = workbook.getStyles();
 
         new ObjectMatrix<Nullable<ICellData>>(to.value).forValue((row, col, newVal) => {
-            if (newVal && newVal.s && options?.fromCollab) {
+            if (newVal && newVal.s && typeof newVal.s === 'object' && options?.fromCollab ) {
 
                 let styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
                 if(!styleHash) {
-                    handleStyle(workbookStyles, originStyleWhenCollab, {s: newVal.s});
+                    handleStyle(workbookStyles, originFromCellStyle, {s: newVal.s});
                     styleHash = workbookStyles.search(newVal.s as IStyleData, JSON.stringify(newVal.s));
                 }
                 if(styleHash) {
