@@ -54,7 +54,7 @@ export function getAddPermissionHidden$(accessor: IAccessor) {
                                 return false;
                             }
                             const worksheetRule = worksheetRuleModel.getRule(unitId, subUnitId);
-                            if (worksheetRule?.permissionId && worksheetRule?.name) {
+                            if (worksheetRule?.permissionId) {
                                 return true;
                             }
                             return selectionsRanges?.some((selectionRange) => {
@@ -115,7 +115,7 @@ export function getEditPermissionHidden$(accessor: IAccessor) {
                             const selectedRange = selectionRanges[0];
 
                             const worksheetRule = worksheetRuleModel.getRule(unitId, subUnitId);
-                            if (worksheetRule?.permissionId && worksheetRule?.name) {
+                            if (worksheetRule?.permissionId) {
                                 return false;
                             }
 
@@ -224,7 +224,7 @@ export function getAddPermissionDisableBase$(accessor: IAccessor) {
                             }
 
                             const worksheetRule = worksheetProtectionRuleModel.getRule(unitId, subUnitId);
-                            if (worksheetRule?.permissionId && worksheetRule?.name) {
+                            if (worksheetRule?.permissionId) {
                                 return true;
                             }
 
@@ -277,8 +277,8 @@ export function getAddPermissionFromSheetBarDisable$(accessor: IAccessor) {
                         map(([permission, _]) => {
                             if (!permission) return true;
                             const worksheetRule = worksheetProtectionRuleModel.getRule(unitId, subUnitId);
-                            if (worksheetRule?.permissionId && worksheetRule?.name) return true;
-                            const subUnitRuleList = selectionProtectionRuleModel.getSubunitRuleList(unitId, subUnitId)?.filter((item) => item?.permissionId && item?.name);
+                            if (worksheetRule?.permissionId) return true;
+                            const subUnitRuleList = selectionProtectionRuleModel.getSubunitRuleList(unitId, subUnitId)?.filter((item) => item?.permissionId);
                             return subUnitRuleList.length > 0;
                         })
                     );
@@ -313,7 +313,7 @@ export function getRemovePermissionFromSheetBarDisable$(accessor: IAccessor) {
                         map(([permission, _]) => {
                             if (!permission) return true;
                             const worksheetPermissionRule = worksheetProtectionRuleModel.getRule(unitId, subUnitId);
-                            return !(worksheetPermissionRule?.permissionId && worksheetPermissionRule?.name);
+                            return !(worksheetPermissionRule?.permissionId);
                         })
                     );
                 })
@@ -408,7 +408,7 @@ export function getRemovePermissionDisable$(accessor: IAccessor) {
                             const selectionRange = selectionRanges[0];
 
                             const worksheetRule = worksheetProtectionRuleModel.getRule(unitId, subUnitId);
-                            if (worksheetRule?.permissionId && worksheetRule?.name) {
+                            if (worksheetRule?.permissionId) {
                                 return false;
                             }
 

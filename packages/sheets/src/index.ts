@@ -147,7 +147,7 @@ export { checkRangesEditablePermission } from './services/permission/util';
 
 // range-protection
 export { type ICellPermission, RangeProtectionRenderModel } from './model/range-protection-render.model';
-export { type IModel, type IObjectModel, type IRangeProtectionRule, RangeProtectionRuleModel } from './model/range-protection-rule.model';
+export { EditStateEnum, type IModel, type IObjectModel, type IRangeProtectionRule, RangeProtectionRuleModel, ViewStateEnum } from './model/range-protection-rule.model';
 export { RangeProtectionCache } from './model/range-protection.cache';
 export type { IWorksheetProtectionRenderCellData } from './services/permission/worksheet-permission/type';
 
@@ -240,7 +240,6 @@ export { SetDefinedNameCommand } from './commands/commands/set-defined-name.comm
 export { SetFrozenCancelCommand } from './commands/commands/set-frozen-cancel.command';
 export { SetFrozenCommand } from './commands/commands/set-frozen.command';
 export { SetHideGridlinesCommand } from './commands/commands/set-hide-gridlines.command';
-export { type ISetRangeProtectionCommandParams, SetRangeProtectionCommand } from './commands/commands/set-range-protection.command';
 export { type ISetRangeValuesCommandParams, SetRangeValuesCommand } from './commands/commands/set-range-values.command';
 export {
     type ISetSpecificRowsVisibleCommandParams,
