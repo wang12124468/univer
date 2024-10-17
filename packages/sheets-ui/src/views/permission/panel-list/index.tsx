@@ -124,13 +124,13 @@ export const SheetPermissionPanelList = () => {
 
     useEffect(() => {
         const subscribe = workbook.activeSheet$.subscribe(async () => {
-            const ruleList = await getRuleList(true);
+            const ruleList = await getRuleList(isCurrentSheet);
             setRuleList(ruleList);
         });
         return () => {
             subscribe.unsubscribe();
         };
-    }, []);
+    }, [isCurrentSheet]);
 
     useEffect(() => {
         const getRuleListByRefresh = async () => {
