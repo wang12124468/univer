@@ -459,10 +459,9 @@ export interface IInnerCutCommandParams {
     selections?: ITextRange[];
 }
 
-const INNER_CUT_COMMAND_ID = 'doc.command.inner-cut';
-
 export const CutContentCommand: ICommand<IInnerCutCommandParams> = {
-    id: INNER_CUT_COMMAND_ID,
+    id: 'doc.command.inner-cut',
+
     type: CommandType.COMMAND,
 
     handler: async (accessor, params: IInnerCutCommandParams) => {
@@ -471,6 +470,7 @@ export const CutContentCommand: ICommand<IInnerCutCommandParams> = {
         const docSelectionManagerService = accessor.get(DocSelectionManagerService);
         const univerInstanceService = accessor.get(IUniverInstanceService);
         const selections = params.selections ?? docSelectionManagerService.getTextRanges();
+
         const rectRanges = docSelectionManagerService.getRectRanges();
 
         if (
