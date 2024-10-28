@@ -58,11 +58,12 @@ export class UniverSheetsNumfmtPlugin extends Plugin {
         this._injector.add([MenuCurrencyService]);
         this._injector.add([NumfmtCurrencyController]);
         this._injector.add([NumfmtMenuController]);
+
+        this._injector.get(SheetsNumfmtCellContentController);
     }
 
     override onRendered(): void {
         this._injector.get(INumfmtController);
-        this._injector.get(SheetsNumfmtCellContentController);
         this._injector.get(NumfmtCurrencyController);
         this._injector.get(NumfmtEditorController);
         this._injector.get(NumfmtMenuController);
