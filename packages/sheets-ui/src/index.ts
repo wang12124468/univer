@@ -184,3 +184,6 @@ export { type IStatisticItem } from './views/status-bar/CopyableStatisticItem';
 
 export { functionDisplayNames } from './views/status-bar/CopyableStatisticItem';
 // #endregion
+
+export { StatusBar } from './views/status-bar/StatusBar';
+export { SheetZoomSlider } from './views/sheet-slider/CountBar';

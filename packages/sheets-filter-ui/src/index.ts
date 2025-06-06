@@ -30,3 +30,9 @@ export {
 } from './commands/operations/sheets-filter.operation';
 
 // #endregion
+
+export { SheetsFilterPanelService } from './services/sheets-filter-panel.service';
+export { FilterBy } from './services/sheets-filter-panel.service';
+export { FilterPanel } from './views/components/SheetsFilterPanel';
+export { FilterByValue } from './views/components/SheetsFilterByValuesPanel';
+export { ByConditionsModel } from './services/sheets-filter-panel.service';

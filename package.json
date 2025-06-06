@@ -24,7 +24,6 @@
     },
     "scripts": {
         "prepare": "husky",
-        "pre-commit": "lint-staged",
         "dev": "turbo dev:demo  -- --host 0.0.0.0",
         "dev:libs": "pnpm --filter univer-examples dev:demo-libs",
         "dev:e2e": "pnpm --filter univer-examples dev:e2e",
@@ -92,8 +91,5 @@
         "@types/react-dom": "^19.1.4",
         "react": "^19.1.0",
         "react-dom": "^19.1.0"
-    },
-    "lint-staged": {
-        "*": "eslint --fix"
     }
 }

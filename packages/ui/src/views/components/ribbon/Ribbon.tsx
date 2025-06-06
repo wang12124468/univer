@@ -30,11 +30,13 @@ import { DropdownWrapper, TooltipWrapper } from './TooltipButtonWrapper';
 
 interface IRibbonProps {
     headerMenuComponents?: Set<ComponentType>;
+    categoryName?: string;
+    positionKey?: string;
     headerMenu?: boolean;
 }
 
 export function Ribbon(props: IRibbonProps) {
-    const { headerMenuComponents, headerMenu = true } = props;
+    const { headerMenuComponents, categoryName, positionKey, headerMenu = true } = props;
 
     const menuManagerService = useDependency(IMenuManagerService);
     const localeService = useDependency(LocaleService);
@@ -48,7 +50,7 @@ export function Ribbon(props: IRibbonProps) {
     }>>({});
 
     const [ribbon, setRibbon] = useState<IMenuSchema[]>([]);
-    const [activatedTab, setActivatedTab] = useState<string>(RibbonPosition.START);
+    const [activatedTab, setActivatedTab] = useState<string>(categoryName || RibbonPosition.START);
     const [changingActiveTab, setChangingActiveTab] = useState(false);
     const [collapsedIds, setCollapsedIds] = useState<string[]>([]);
 
@@ -74,7 +76,8 @@ export function Ribbon(props: IRibbonProps) {
     // subscribe to menu changes
     useEffect(() => {
         function getRibbon(): void {
-            const ribbon = menuManagerService.getMenuByPositionKey(MenuManagerPosition.RIBBON);
+            const ribbon = menuManagerService.getMenuByPositionKey(positionKey || MenuManagerPosition.RIBBON) || [];
+            // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
             setRibbon(ribbon);
         }
         getRibbon();
@@ -84,7 +87,7 @@ export function Ribbon(props: IRibbonProps) {
         return () => {
             subscription.unsubscribe();
         };
-    }, [menuManagerService]);
+    }, [menuManagerService, positionKey]);
 
     const activeGroup = useMemo(() => {
         const allGroups = ribbon.find((group) => group.key === activatedTab)?.children ?? [];
@@ -94,18 +97,10 @@ export function Ribbon(props: IRibbonProps) {
         for (const item of allGroups) {
             if (item.children) {
                 const visibleChildren = item.children.filter((child) => !collapsedIds.includes(child.key));
-                if (visibleChildren.length > 0) {
-                    visibleGroups.push({
-                        ...item,
-                        children: visibleChildren,
-                    });
-                }
+                visibleGroups.push({ ...item, children: visibleChildren });
 
                 if (visibleChildren.length < item.children.length) {
-                    hiddenGroups.push({
-                        ...item,
-                        children: item.children.filter((child) => collapsedIds.includes(child.key)),
-                    });
+                    hiddenGroups.push({ ...item, children: item.children.filter((child) => collapsedIds.includes(child.key)) });
                 }
             }
         }
@@ -163,29 +158,32 @@ export function Ribbon(props: IRibbonProps) {
     }, [ribbon, activatedTab, collapsedIds]);
 
     const fakeToolbarContent = useMemo(() => (
-        activeGroup.allGroups.map((groupItem) => (
-            <Fragment key={groupItem.key}>
-                <div className={clsx('univer-flex univer-flex-nowrap univer-gap-2 univer-px-2', separatorClassName)}>
-                    {groupItem.children?.map((child) => (
-                        child.item && (
-                            <ToolbarItem
-                                key={child.key}
-                                {...child.item}
-                                ref={(ref) => {
-                                    if (ref?.el) {
-                                        toolbarItemRefs.current[child.key] = {
-                                            el: ref.el,
-                                            key: child.key,
-                                            groupOrder: groupItem.order,
-                                            order: child.order,
-                                        };
-                                    }
-                                }}
-                            />
-                        )
-                    ))}
-                </div>
-            </Fragment>
+        activeGroup.allGroups.map((groupItem, groupOrder) => (
+            <div key={groupItem.key} className={clsx('univer-flex univer-flex-nowrap univer-gap-2 univer-px-2', separatorClassName)}>
+                {groupItem.children?.map((child, order) => {
+                    if (!child.item) { return null; }
+                    if (toolbarItemRefs.current[child.key]) {
+                        // update
+                        toolbarItemRefs.current[child.key].groupOrder = groupOrder;
+                        toolbarItemRefs.current[child.key].order = order;
+                    };
+
+                    return (
+                        <ToolbarItem
+                            key={child.key}
+                            ref={(ref) => {
+                                toolbarItemRefs.current[child.key] = {
+                                    el: ref?.el as HTMLDivElement,
+                                    key: child.key,
+                                    groupOrder,
+                                    order,
+                                };
+                            }}
+                            {...child.item}
+                        />
+                    );
+                })}
+            </div>
         ))
     ), [activeGroup.allGroups]);
 

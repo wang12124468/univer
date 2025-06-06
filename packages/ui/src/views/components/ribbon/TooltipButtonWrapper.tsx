@@ -35,7 +35,7 @@ export interface ITooltipWrapperRef {
 }
 
 export const TooltipWrapper = forwardRef<ITooltipWrapperRef, ITooltipProps>((props, ref) => {
-    const { children, ...tooltipProps } = props;
+    const { children, title, ...tooltipProps } = props;
     const spanRef = useRef<HTMLSpanElement>(null);
 
     const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -64,11 +64,15 @@ export const TooltipWrapper = forwardRef<ITooltipWrapperRef, ITooltipProps>((pro
         el: spanRef.current,
     }));
 
+    const extraProps = title ? { visible: tooltipVisible } : {};
+
     return (
         <Tooltip
+            title={title}
             {...tooltipProps}
-            visible={tooltipVisible}
+            // visible={tooltipVisible}
             onVisibleChange={handleChangeTooltipVisible}
+            {...extraProps}
         >
             <span ref={spanRef}>
                 <TooltipWrapperContext.Provider value={contextValue}>
