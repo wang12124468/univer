@@ -15,7 +15,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { DownSingle } from '@univerjs/icons';
+import { DownIcon } from '@univerjs/icons';
 import { useState } from 'react';
 import { clsx } from '../../helper/clsx';
 
@@ -42,7 +42,7 @@ export function Accordion(props: IAccordionProps) {
             data-u-comp="accordion"
             className={clsx(`
               univer-divide-x-0 univer-divide-y univer-divide-solid univer-divide-gray-200
-              dark:univer-divide-gray-600
+              dark:!univer-divide-gray-600
             `, className)}
         >
             {items.map((item, index) => (
@@ -52,14 +52,14 @@ export function Accordion(props: IAccordionProps) {
                           univer-box-border univer-flex univer-w-full univer-cursor-pointer univer-items-center
                           univer-gap-1.5 univer-border-none univer-bg-transparent univer-p-4 univer-text-left
                           univer-text-gray-700
-                          dark:univer-text-gray-200 dark:hover:univer-text-white
-                          focus:univer-outline-none
                           hover:univer-text-gray-900
+                          focus:univer-outline-none
+                          dark:!univer-text-gray-200 dark:hover:!univer-text-white
                         `}
                         type="button"
                         onClick={() => toggleItem(index)}
                     >
-                        <DownSingle
+                        <DownIcon
                             className={clsx('univer-size-2.5 univer-flex-shrink-0 univer-transition-transform', {
                                 '-univer-rotate-90': openIndex !== index,
                                 'univer-rotate-0': openIndex === index,
@@ -68,15 +68,13 @@ export function Accordion(props: IAccordionProps) {
                         <span className="univer-font-medium">{item.label}</span>
                     </button>
                     <div
-                        className={clsx(
-                            `
-                              univer-overflow-hidden univer-transition-[max-height,opacity] univer-duration-500
-                              univer-ease-in-out
-                            `,
-                            openIndex === index
-                                ? 'univer-max-h-screen'
-                                : 'univer-max-h-0'
-                        )}
+                        className={clsx(`
+                          univer-overflow-hidden univer-transition-[max-height,opacity] univer-duration-500
+                          univer-ease-in-out
+                        `, {
+                            'univer-max-h-screen': openIndex === index,
+                            'univer-max-h-0': openIndex !== index,
+                        })}
                     >
                         <div className="univer-box-border univer-px-4 univer-py-1.5">{item.children}</div>
                     </div>

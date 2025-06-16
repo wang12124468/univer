@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { OneToOneSingle, ZoomInSingle, ZoomOutSingle } from '@univerjs/icons';
+import { OneToOneIcon, ZoomInIcon, ZoomOutIcon } from '@univerjs/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from '../../helper/clsx';
@@ -83,18 +83,20 @@ export function Gallery(props: IGalleryProps) {
 
             {/* Content */}
             <div className="univer-relative">
-                <img
-                    className={`
-                      univer-max-h-[40vh] univer-max-w-[60vw] univer-transition-transform univer-duration-300
-                      univer-ease-out
-                    `}
-                    style={{
-                        transform: `scale(${zoomLevel})`,
-                    }}
-                    src={activeImage}
-                    alt="gallery"
-                    draggable={false}
-                />
+                {activeImage && (
+                    <img
+                        className={`
+                          univer-max-h-[40vh] univer-max-w-[60vw] univer-transition-transform univer-duration-300
+                          univer-ease-out
+                        `}
+                        style={{
+                            transform: `scale(${zoomLevel})`,
+                        }}
+                        src={activeImage}
+                        alt="gallery"
+                        draggable={false}
+                    />
+                )}
             </div>
 
             {/* Toolbar */}
@@ -122,7 +124,7 @@ export function Gallery(props: IGalleryProps) {
                     `}
                     onClick={() => handleToggleZoom(0.25)}
                 >
-                    <ZoomInSingle />
+                    <ZoomInIcon />
                 </a>
                 <a
                     className={`
@@ -131,7 +133,7 @@ export function Gallery(props: IGalleryProps) {
                     `}
                     onClick={() => handleToggleZoom(-0.25)}
                 >
-                    <ZoomOutSingle />
+                    <ZoomOutIcon />
                 </a>
                 <a
                     className={`
@@ -140,7 +142,7 @@ export function Gallery(props: IGalleryProps) {
                     `}
                     onClick={() => handleToggleZoom('reset')}
                 >
-                    <OneToOneSingle />
+                    <OneToOneIcon />
                 </a>
             </footer>
         </div>,

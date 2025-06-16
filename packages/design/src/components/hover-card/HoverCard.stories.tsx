@@ -18,11 +18,11 @@ import type { Meta } from '@storybook/react';
 
 import { borderClassName } from '../../helper/class-utilities';
 import { clsx } from '../../helper/clsx';
-import { Dropdown } from './Dropdown';
+import { HoverCard } from './HoverCard';
 
-const meta: Meta<typeof Dropdown> = {
-    title: 'Components / Dropdown',
-    component: Dropdown,
+const meta: Meta<typeof HoverCard> = {
+    title: 'Components / HoverCard',
+    component: HoverCard,
     parameters: {
         layout: 'centered',
     },
@@ -35,11 +35,12 @@ export const Playground = {
     render() {
         return (
             <div className="univer-relative">
-                <Dropdown
+                <HoverCard
                     overlay={(
                         <div className="univer-text-primary-500">
                             Hello Univer
-                            <Dropdown
+                            <HoverCard
+                                openDelay={0}
                                 overlay={(
                                     <div className="univer-text-cyan-700">
                                         <div>Nested Content</div>
@@ -49,8 +50,8 @@ export const Playground = {
                                     </div>
                                 )}
                             >
-                                <a>Nested Popover</a>
-                            </Dropdown>
+                                <a>Nested Hover Card</a>
+                            </HoverCard>
                         </div>
                     )}
                 >
@@ -63,7 +64,7 @@ export const Playground = {
                     >
                         Click me
                     </a>
-                </Dropdown>
+                </HoverCard>
             </div>
         );
     },

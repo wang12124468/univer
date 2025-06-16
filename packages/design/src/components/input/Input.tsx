@@ -15,24 +15,26 @@
  */
 
 import type { VariantProps } from 'class-variance-authority';
-import { CloseSingle } from '@univerjs/icons';
+import type { InputHTMLAttributes } from 'react';
+import { CloseIcon } from '@univerjs/icons';
 import { cva } from 'class-variance-authority';
-import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { borderClassName } from '../../helper/class-utilities';
 import { clsx } from '../../helper/clsx';
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
 export const inputVariants = cva(
     `
       univer-box-border univer-w-full univer-rounded-md univer-bg-white univer-transition-colors univer-duration-200
-      dark:univer-bg-gray-700 dark:univer-text-white
-      focus:univer-border-primary-600 focus:univer-outline-none focus:univer-ring-2 focus:univer-ring-primary-50
       placeholder:univer-text-gray-400
+      focus:univer-border-primary-600 focus:univer-outline-none focus:univer-ring-2 focus:univer-ring-primary-50
+      dark:!univer-bg-gray-700 dark:!univer-text-white dark:focus:!univer-ring-primary-900
     `,
     {
         variants: {
             size: {
+                mini: 'univer-h-7 univer-px-1.5 univer-text-sm',
                 small: 'univer-h-8 univer-px-2 univer-text-sm',
                 middle: 'univer-h-10 univer-px-3 univer-text-base',
                 large: 'univer-h-12 univer-px-4 univer-text-lg',
@@ -134,7 +136,7 @@ export const Input = forwardRef<HTMLInputElement, IInputProps>(
                         borderClassName,
                         disabled && `
                           univer-cursor-not-allowed univer-bg-gray-50 univer-text-gray-400
-                          dark:univer-text-gray-500
+                          dark:!univer-text-gray-500
                         `,
                         (allowClear && !slot) && 'univer-pr-8',
                         inputClass
@@ -165,14 +167,14 @@ export const Input = forwardRef<HTMLInputElement, IInputProps>(
                                 type="button"
                                 onClick={handleClear}
                                 className={`
-                                  univer-flex univer-size-4 univer-cursor-pointer univer-rounded-full univer-border-none
-                                  univer-bg-transparent univer-p-1 univer-text-gray-400 univer-transition-colors
-                                  univer-duration-200
-                                  focus:univer-outline-none
+                                  univer-flex univer-size-4 univer-cursor-pointer univer-items-center
+                                  univer-rounded-full univer-border-none univer-bg-transparent univer-p-1
+                                  univer-text-gray-400 univer-transition-colors univer-duration-200
                                   hover:univer-text-gray-500
+                                  focus:univer-outline-none
                                 `}
                             >
-                                <CloseSingle className="univer-size-3" />
+                                <CloseIcon className="univer-size-3" />
                             </button>
                         )}
                     </div>

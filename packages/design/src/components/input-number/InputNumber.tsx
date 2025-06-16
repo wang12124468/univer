@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-import React, { forwardRef, useEffect, useRef, useState } from 'react';
+import type { FocusEvent, InputHTMLAttributes, KeyboardEvent } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { clsx } from '../../helper/clsx';
 import { Button } from '../button/Button';
 import { Input } from '../input/Input';
 
 export interface IInputNumberProps
-    extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'defaultValue'> {
+    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'defaultValue' | 'size'> {
     value?: number | null;
     defaultValue?: number;
+    size?: 'mini' | 'small';
     min?: number;
     max?: number;
     step?: number;
@@ -34,8 +36,8 @@ export interface IInputNumberProps
     inputClassName?: string;
     controlsClassName?: string;
     onChange?: (value: number | null) => void;
-    onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-    onPressEnter?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+    onPressEnter?: (e: KeyboardEvent<HTMLInputElement>) => void;
     allowEmpty?: boolean;
 }
 
@@ -44,6 +46,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
         {
             value,
             defaultValue,
+            size = 'small',
             min = Number.MIN_SAFE_INTEGER,
             max = Number.MAX_SAFE_INTEGER,
             step = 1,
@@ -203,7 +206,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
             onChange?.(parsedValue);
         }
 
-        function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+        function handleBlur(e: FocusEvent<HTMLInputElement>) {
             // If allowEmpty is true and input is empty, do not restore the last valid value
             if (internalValue === null) {
                 if (inputValue === '' && allowEmpty) {
@@ -285,7 +288,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
         }
 
         // Handle key down events for arrow keys
-        function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+        function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
             if (disabled) return;
 
             onKeyDown?.(e);
@@ -315,6 +318,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
                     <Input
                         ref={mergedRef}
                         className={clsx('univer-box-border', inputClassName)}
+                        size={size}
                         value={inputValue}
                         disabled={disabled}
                         onChange={handleInputChange}
@@ -331,7 +335,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
                                   univer-h-[calc(100%-2px)] univer-w-6 univer-flex-col univer-border univer-border-y-0
                                   univer-border-l univer-border-r-0 univer-border-solid univer-border-gray-200
                                   univer-border-l-gray-200
-                                  dark:univer-border-gray-600
+                                  dark:!univer-border-gray-600
                                 `,
                                 controlsClassName
                             )}
@@ -342,7 +346,7 @@ export const InputNumber = forwardRef<HTMLInputElement, IInputNumberProps>(
                                   univer-border-none !univer-bg-transparent univer-text-xs
                                   after:univer-absolute after:-univer-bottom-px after:univer-block after:univer-h-px
                                   after:univer-w-full after:univer-bg-gray-200 after:univer-content-['']
-                                  dark:after:univer-bg-gray-600
+                                  dark:after:!univer-bg-gray-600
                                 `}
                                 tabIndex={-1}
                                 disabled={disabled || (max !== undefined && internalValue !== null && internalValue >= max)}

@@ -15,15 +15,16 @@
  */
 
 import type { MenuItemGroupProps, MenuItemProps, MenuProps, MenuRef, SubMenuProps } from 'rc-menu';
+import type { ComponentType } from 'react';
 import RcMenu, { MenuItem as RcMenuItem, MenuItemGroup as RcMenuItemGroup, SubMenu as RcSubMenu } from 'rc-menu';
-import React, { useContext } from 'react';
+import { forwardRef, useContext } from 'react';
 import { clsx } from '../../helper/clsx';
 import { ConfigContext } from '../config-provider/ConfigProvider';
 import { Tooltip } from '../tooltip/Tooltip';
 import './index.css';
 
 /** @deprecated */
-export const Menu = React.forwardRef<MenuRef, MenuProps & { wrapperClass?: string }>((props, ref) => {
+export const Menu = forwardRef<MenuRef, MenuProps & { wrapperClass?: string }>((props, ref) => {
     const { mountContainer } = useContext(ConfigContext);
     const { wrapperClass, ...rest } = props;
     return mountContainer && (
@@ -55,7 +56,7 @@ export function MenuItemGroup(props: MenuItemGroupProps) {
 export interface ITinyMenuItem {
     onClick: () => void;
     className: string;
-    Icon: React.ComponentType<{ className?: string }>;
+    Icon: ComponentType<{ className?: string }>;
     key: string;
     active?: boolean;
     tooltip?: string;
@@ -69,7 +70,7 @@ export function TinyMenuGroup({ items }: ITinyMenuGroupProps) {
     return (
         <div
             className={`
-              univer-flex univer-flex-wrap univer-gap-2.5 univer-menu-item-group univer-p-1 univer-pl-0 univer-pr-0
+              univer-menu-item-group univer-flex univer-flex-wrap univer-gap-2.5 univer-p-1 univer-pl-0 univer-pr-0
             `}
         >
             {items.map((item) => {
@@ -79,17 +80,17 @@ export function TinyMenuGroup({ items }: ITinyMenuGroupProps) {
                         className={clsx(`
                           univer-flex univer-size-6 univer-cursor-pointer univer-items-center univer-justify-center
                           univer-rounded-md
-                          dark:hover:univer-bg-gray-900
                           hover:univer-bg-gray-50
+                          dark:hover:!univer-bg-gray-900
                         `, {
-                            'univer-bg-gray-50 dark:univer-bg-gray-900': item.active,
+                            'univer-bg-gray-50 dark:!univer-bg-gray-900': item.active,
                         }, item.className)}
                         onClick={() => item.onClick()}
                     >
                         <item.Icon
                             className={`
                               univer-size-4 univer-text-gray-900
-                              dark:univer-text-gray-200
+                              dark:!univer-text-gray-200
                             `}
                         />
                     </div>

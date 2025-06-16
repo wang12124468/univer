@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type { CSSProperties, ReactNode } from 'react';
-import { CheckMarkSingle } from '@univerjs/icons';
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import { CheckMarkIcon } from '@univerjs/icons';
 import { useRef } from 'react';
 import { clsx } from '../../helper/clsx';
 
@@ -72,7 +72,7 @@ export function Checkbox(props: ICheckboxProps) {
 
     const inputRef = useRef<HTMLInputElement>(null);
 
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function handleChange(e: ChangeEvent<HTMLInputElement>) {
         e.stopPropagation();
 
         if (!onChange || disabled) return;
@@ -89,7 +89,7 @@ export function Checkbox(props: ICheckboxProps) {
         <label
             data-u-comp="checkbox"
             className={clsx('univer-box-border univer-inline-flex univer-items-center univer-gap-2 univer-text-sm', {
-                'univer-cursor-pointer univer-text-gray-900 dark:univer-text-white': !disabled,
+                'univer-cursor-pointer univer-text-gray-900 dark:!univer-text-white': !disabled,
                 'univer-text-gray-400': disabled,
             }, className)}
             style={style}
@@ -107,15 +107,15 @@ export function Checkbox(props: ICheckboxProps) {
                     className={clsx(`
                       univer-relative univer-box-border univer-flex univer-size-4 univer-items-center
                       univer-justify-center univer-overflow-hidden univer-rounded univer-border univer-border-solid
-                      univer-border-gray-300 univer-bg-gray-50 univer-transition-colors
-                      dark:univer-border-gray-500 dark:univer-bg-gray-600
+                      univer-transition-colors
                     `, {
                         'univer-opacity-50': disabled,
                         'univer-border-primary-600 univer-bg-primary-600': checked || indeterminate,
+                        'univer-border-gray-300 univer-bg-gray-50 dark:!univer-border-gray-500 dark:!univer-bg-gray-600': !checked && !indeterminate,
                     })}
                 >
                     {checked && (
-                        <CheckMarkSingle
+                        <CheckMarkIcon
                             className={`
                               univer-absolute univer-left-1/2 univer-top-1/2 univer-block univer-size-3
                               -univer-translate-x-1/2 -univer-translate-y-1/2 univer-text-white

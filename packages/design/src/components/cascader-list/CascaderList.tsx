@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CheckMarkSingle } from '@univerjs/icons';
+import { CheckMarkIcon } from '@univerjs/icons';
 import { useContext, useMemo } from 'react';
 import { borderClassName, scrollbarClassName } from '../../helper/class-utilities';
 import { clsx } from '../../helper/clsx';
@@ -60,7 +60,7 @@ function Empty({ emptyText }: { emptyText?: string }) {
         <section
             className={`
               univer-h-8 univer-px-2 univer-pr-32 univer-text-sm/8 univer-text-gray-600
-              dark:univer-text-gray-200
+              dark:!univer-text-gray-200
             `}
         >
             {emptyText}
@@ -111,9 +111,9 @@ export function CascaderList(props: ICascaderListProps) {
             className={clsx(`
               univer-overflow-auto-y univer-grid univer-h-full univer-max-h-80 univer-grid-flow-col univer-rounded
               univer-py-2 univer-text-gray-900
+              dark:!univer-text-white
               [&>ul:not(:last-child)]:univer-border-0 [&>ul:not(:last-child)]:univer-border-r
               [&>ul:not(:last-child)]:univer-border-solid [&>ul:not(:last-child)]:univer-border-r-gray-200
-              dark:univer-text-white
             `, borderClassName, scrollbarClassName, wrapperClassName)}
         >
             {activeOptions.map((options, index) =>
@@ -135,7 +135,7 @@ export function CascaderList(props: ICascaderListProps) {
                                         `, {
                                             'univer-px-7': index > 0,
                                             'univer-px-1.5': index === 0,
-                                            'univer-bg-gray-200 dark:univer-bg-gray-600': option.value === value[index],
+                                            'univer-bg-gray-200 dark:!univer-bg-gray-600': option.value === value[index],
                                         })}
                                         onClick={() => handleChange(index, option.value)}
                                     >
@@ -147,7 +147,7 @@ export function CascaderList(props: ICascaderListProps) {
                                                 `}
                                             >
                                                 {option.value === value[index] && (
-                                                    <CheckMarkSingle
+                                                    <CheckMarkIcon
                                                         className="univer-text-primary-600"
                                                     />
                                                 )}

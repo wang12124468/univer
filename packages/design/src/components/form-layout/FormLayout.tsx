@@ -15,7 +15,7 @@
  */
 
 import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
-import { MoreUpSingle } from '@univerjs/icons';
+import { MoreUpIcon } from '@univerjs/icons';
 import { createContext, useState } from 'react';
 import { clsx } from '../../helper/clsx';
 
@@ -46,22 +46,20 @@ export const FormLayout = (props: IFormLayoutProps) => {
                         className={clsx(`
                           univer-mb-2 univer-flex univer-min-h-3.5 univer-items-center univer-text-sm
                           univer-text-gray-900
-                          dark:univer-text-white
+                          dark:!univer-text-white
                         `, {
                             'univer-cursor-pointer': collapsable,
                         })}
                         onClick={() => setCollapsed(!collapsed)}
                     >
                         {label}
-                        {collapsable
-                            ? (
-                                <MoreUpSingle
-                                    className={clsx('univer-ml-1 univer-transition-transform', {
-                                        'univer-rotate-180': collapsed,
-                                    })}
-                                />
-                            )
-                            : null}
+                        {collapsable && (
+                            <MoreUpIcon
+                                className={clsx('univer-ml-1 univer-transition-transform', {
+                                    'univer-rotate-180': collapsed,
+                                })}
+                            />
+                        )}
                     </div>
                 )}
                 {collapsed && collapsable
@@ -72,7 +70,7 @@ export const FormLayout = (props: IFormLayoutProps) => {
                                 <div
                                     className={`
                                       univer-mt-1 univer-text-sm univer-text-gray-600
-                                      dark:univer-text-gray-200
+                                      dark:!univer-text-gray-200
                                     `}
                                 >
                                     {desc}
@@ -82,9 +80,9 @@ export const FormLayout = (props: IFormLayoutProps) => {
                                 ? (
                                     <div
                                         className={clsx(`
+                                          last:univer-mb-0
                                           [&_[data-u-comp=input]]:univer-w-full
                                           [&_[data-u-comp=select]]:univer-w-full
-                                          last:univer-mb-0
                                         `, {
                                             '[&_[data-u-comp=input]]:univer-border-red-500': error,
                                             '[&_[data-u-comp=select]]:univer-border-red-500': error,

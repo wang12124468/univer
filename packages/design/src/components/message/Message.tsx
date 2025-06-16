@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ErrorSingle, InfoSingle, Loading, SuccessSingle, WarningSingle } from '@univerjs/icons';
+import { ErrorIcon, InfoIcon, LoadingMultiIcon, SuccessIcon, WarningIcon } from '@univerjs/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from '../../helper/clsx';
@@ -37,18 +37,18 @@ export interface IMessageProps {
 }
 
 const iconMap = {
-    [MessageType.Success]: <SuccessSingle className="univer-text-green-500" />,
+    [MessageType.Success]: <SuccessIcon className="univer-text-green-500" />,
     [MessageType.Info]: (
-        <InfoSingle
+        <InfoIcon
             className={`
               univer-text-indigo-600
-              dark:univer-text-primary-500
+              dark:!univer-text-primary-500
             `}
         />
     ),
-    [MessageType.Warning]: <WarningSingle className="univer-text-yellow-400" />,
-    [MessageType.Error]: <ErrorSingle className="univer-text-red-500" />,
-    [MessageType.Loading]: <Loading className="univer-animate-spin univer-text-yellow-400" />,
+    [MessageType.Warning]: <WarningIcon className="univer-text-yellow-400" />,
+    [MessageType.Error]: <ErrorIcon className="univer-text-red-500" />,
+    [MessageType.Loading]: <LoadingMultiIcon className="univer-animate-spin univer-text-yellow-400" />,
 };
 
 const Message = ({ content, type = MessageType.Info }: IMessageProps) => {
@@ -58,10 +58,10 @@ const Message = ({ content, type = MessageType.Info }: IMessageProps) => {
         <div
             className={clsx(
                 `
-                  univer-min-w-[320px] univer-max-w-[480px] univer-rounded-xl univer-border univer-border-solid
-                  univer-border-gray-200 univer-bg-white univer-p-4 univer-font-sans univer-shadow-md
-                  univer-transition-all univer-duration-300 univer-animate-in univer-fade-in univer-slide-in-from-top-4
-                  dark:univer-border-gray-600 dark:univer-bg-gray-700
+                  univer-animate-in univer-fade-in univer-slide-in-from-top-4 univer-min-w-[320px] univer-max-w-[480px]
+                  univer-rounded-xl univer-border univer-border-solid univer-border-gray-200 univer-bg-white univer-p-4
+                  univer-font-sans univer-shadow-md univer-transition-all univer-duration-300
+                  dark:!univer-border-gray-600 dark:!univer-bg-gray-700
                 `
             )}
         >
@@ -72,7 +72,7 @@ const Message = ({ content, type = MessageType.Info }: IMessageProps) => {
                 <p
                     className={`
                       univer-m-0 univer-text-sm univer-text-gray-500 univer-opacity-90
-                      dark:univer-text-gray-400
+                      dark:!univer-text-gray-400
                     `}
                 >
                     {content}
@@ -110,6 +110,7 @@ const createMessage = (() => {
         };
 
         useEffect(() => {
+            const timers: number[] = [];
             addMessage = (message) => {
                 const id = String(messageCount++);
                 setState((prev) => ({
@@ -117,12 +118,19 @@ const createMessage = (() => {
                 }));
 
                 if (message.duration !== Infinity) {
-                    setTimeout(() => {
+                    const timer = window.setTimeout(() => {
                         setState((prev) => ({
                             messages: prev.messages.filter((t) => t.id !== id),
                         }));
                     }, message.duration || 3000);
+                    timers.push(timer);
                 }
+            };
+
+            return () => {
+                timers.forEach((timer) => {
+                    window.clearTimeout(timer);
+                });
             };
         }, []);
 
