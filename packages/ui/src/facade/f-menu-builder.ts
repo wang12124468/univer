@@ -168,6 +168,8 @@ export class FMenu extends FMenuBase {
     ) {
         super();
 
+        const { action, ...rest } = _item;
+
         const commandId = typeof _item.action === 'string' ? _item.action : Tools.generateRandomId(12);
         if (commandId !== _item.action) {
             this._commandToRegister.set(commandId, _item.action as unknown as () => void);
@@ -176,11 +178,12 @@ export class FMenu extends FMenuBase {
         this._buildingSchema = {
             // eslint-disable-next-line ts/explicit-function-return-type
             menuItemFactory: () => ({
-                id: _item.id,
+                ...rest,
+                // id: _item.id,
                 type: MenuItemType.BUTTON, // we only support button for now
-                icon: _item.icon,
-                title: _item.title,
-                tooltip: _item.tooltip,
+                // icon: _item.icon,
+                // title: _item.title,
+                // tooltip: _item.tooltip,
                 commandId,
             } as IMenuButtonItem),
         };

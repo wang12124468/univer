@@ -655,7 +655,7 @@ export const menuSchema: MenuSchemaType = {
     },
     [ContextMenuPosition.FOOTER_TABS]: {
         [ContextMenuGroup.OTHERS]: {
-            order: 0,
+            // order: 0,
             [RemoveSheetConfirmCommand.id]: {
                 order: 0,
                 menuItemFactory: DeleteSheetMenuItemFactory,

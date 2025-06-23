@@ -23,7 +23,7 @@ import { sheetDeleteNoteMenuFactory, sheetNoteContextMenuFactory, sheetNoteToggl
 export const menuSchema: MenuSchemaType = {
     [ContextMenuPosition.MAIN_AREA]: {
         [ContextMenuGroup.OTHERS]: {
-            order: 0,
+            // order: 0,
             [AddNotePopupOperation.id]: {
                 order: 0,
                 menuItemFactory: sheetNoteContextMenuFactory,

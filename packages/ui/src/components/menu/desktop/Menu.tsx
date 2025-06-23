@@ -77,7 +77,7 @@ function MenuWrapper(props: IBaseMenuProps) {
 
             const itemKey = item.key?.toString() || '';
             return !hiddenStates[itemKey];
-        });
+        }).sort((a, b) => a.order - b.order);
     }, [menuItems, hiddenStates]);
 
     useEffect(() => {
@@ -188,7 +188,8 @@ function MenuOptionsWrapper(props: IBaseMenuProps) {
 
 /** @deprecated */
 export const Menu = (props: IBaseMenuProps) => {
-    const { overViewport, style, ...restProps } = props;
+    // @ts-ignore
+    const { overViewport, style, getPopupContainer, ...restProps } = props;
     const [menuEl, setMenuEl] = useState<HTMLDListElement>();
     const layoutService = useDependency(ILayoutService);
 
@@ -204,6 +205,7 @@ export const Menu = (props: IBaseMenuProps) => {
             style={style}
             ref={handleSetMenuEl}
             selectable={false}
+            getPopupContainer={getPopupContainer}
         >
             <MenuOptionsWrapper {...restProps} />
             <MenuWrapper {...restProps} />
@@ -332,9 +334,9 @@ function MenuItem({ menuItem, onClick }: IMenuItemProps) {
 
     const renderSubItemsType = () => {
         const item = menuItem as IDisplayMenuItem<IMenuSelectorItem>;
-
         return (
             <DesignSubMenu
+                popupClassName={item.id || ''}
                 key={item.id}
                 eventKey={item.id}
                 popupOffset={[18, 0]}

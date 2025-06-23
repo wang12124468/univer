@@ -34,6 +34,7 @@ export function DesktopContextMenu() {
     const commandService = useDependency(ICommandService);
     const injector = useInjector();
     visibleRef.current = visible;
+    const popupRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const disposables = contextMenuService.registerContextMenuHandler({
@@ -47,7 +48,7 @@ export function DesktopContextMenu() {
         });
 
         function handleClickOutside(event: MouseEvent) {
-            if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
+            if ((contentRef.current && !contentRef.current.contains(event.target as Node)) && popupRef.current && !popupRef.current.contains(event.target as Node)) {
                 handleClose();
             }
         }
@@ -77,26 +78,31 @@ export function DesktopContextMenu() {
     }
 
     return (
-        <Popup visible={visible} offset={offset}>
-            <section ref={contentRef}>
-                {menuType && (
-                    <Menu
-                        menuType={menuType}
-                        onOptionSelect={(params) => {
-                            const { label: id, commandId, value } = params;
+        <>
+            <Popup visible={visible} offset={offset}>
+                <section ref={contentRef}>
+                    {menuType && (
+                        <Menu
+                            getPopupContainer={() => popupRef.current}
+                            menuType={menuType}
+                            onOptionSelect={(params) => {
+                                const { label: id, commandId, value } = params;
 
-                            if (commandService) {
-                                commandService.executeCommand(commandId ?? id as string, { value });
-                            }
+                                if (commandService) {
+                                    commandService.executeCommand(commandId ?? id as string, { value });
+                                }
 
-                            const layoutService = injector.get(ILayoutService);
-                            layoutService.focus();
+                                const layoutService = injector.get(ILayoutService);
+                                layoutService.focus();
 
-                            setVisible(false);
-                        }}
-                    />
-                )}
-            </section>
-        </Popup>
+                                setVisible(false);
+                            }}
+                        />
+                    )}
+                </section>
+            </Popup>
+            <div ref={popupRef}></div>
+        </>
+        
     );
 }
