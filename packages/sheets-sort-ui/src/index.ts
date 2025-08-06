@@ -34,3 +34,8 @@ export {
 } from './commands/commands/sheets-sort.command';
 
 // #endregion
+
+export { SheetsSortUIService } from './services/sheets-sort-ui.service';
+export { menuSchema as sheetsSortUIMenuSchema } from './controllers/menu.schema';
+
+

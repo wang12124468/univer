@@ -1,0 +1,44 @@
+.sheets-chart-ui-print-chart {
+    position: absolute;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    inset: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    background-color: #fff;
+
+    &-body {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
+    &-header {
+        display: flex;
+        align-items: center;
+        height: 40px;
+
+        &-text {
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, .85);
+        }
+    }
+
+    &-container {
+        position: absolute;
+        inset: 0;
+    }
+}
+
+.sheets-chart-ui-active {
+    z-index: 11;
+
+    .sheets-chart-ui-print-chart{
+        border-color: #108ee9;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+    }
+}

@@ -66,6 +66,7 @@ export interface IFilters {
  */
 export interface ICustomFilters {
     and?: BooleanNumber.TRUE;
+    filterName?: any;
     customFilters: [ICustomFilter] | [ICustomFilter, ICustomFilter];
 }
 
@@ -76,7 +77,9 @@ export interface ICustomFilters {
  * @property {CustomFilterOperator} [operator] The operator of the comparison. If this field is empty, the operator would be 'equal'.
  */
 export interface ICustomFilter {
+    name?: string;
     val: string | number;
+    filterName?: any;
     operator?: CustomFilterOperator;
 }
 

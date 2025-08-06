@@ -52,3 +52,5 @@ export {
 } from './commands/commands/sheets-filter.command';
 
 // #endregion
+
+export { registerCustomFilterFn } from './models/custom-filters';

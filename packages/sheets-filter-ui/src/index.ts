@@ -38,3 +38,5 @@ export { FilterByValue } from './views/components/SheetsFilterByValuesPanel';
 export { ByConditionsModel } from './services/sheets-filter-panel.service';
 export { SheetsFilterRenderController } from './views/render-modules/sheets-filter.render-controller';
 export { SheetsFilterButtonShape } from './views/widgets/filter-button.shape';
+export { FilterConditionItems } from './models/conditions';
+

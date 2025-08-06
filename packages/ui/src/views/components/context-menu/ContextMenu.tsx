@@ -83,7 +83,7 @@ export function DesktopContextMenu() {
                 <section ref={contentRef}>
                     {menuType && (
                         <Menu
-                            getPopupContainer={() => popupRef.current}
+                            { ...{ getPopupContainer: () => popupRef.current, visible } }
                             menuType={menuType}
                             onOptionSelect={(params) => {
                                 const { label: id, commandId, value } = params;

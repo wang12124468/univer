@@ -1,0 +1,36 @@
+.sheets-chart-ui-editor-edit-chart-tab-config {
+    &-form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+
+        &:last-child {
+            margin-bottom: 0px;
+        }
+
+        &-label {
+            text-align: right;
+            vertical-align: middle;
+            line-height: 32px;
+            display: inline-block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgba(0, 0, 0, .85);
+
+            &::after {
+                content: ":";
+                margin: 0 8px 0 2px;
+                position: relative;
+                top: -.5px;
+            }
+        }
+
+        &-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            gap: 8px;
+        }
+    }
+}

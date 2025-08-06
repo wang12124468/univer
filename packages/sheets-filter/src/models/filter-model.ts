@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import type { CellValue, ICellData, IRange, Nullable, Worksheet } from '@univerjs/core';
+import { CellValue, ICellData, Injector, IRange, Nullable, Worksheet } from '@univerjs/core';
 import type { Observable } from 'rxjs';
 import type { IAutoFilter, ICustomFilter, ICustomFilters, IFilterColumn, IFilters } from './types';
-import { CellValueType, Disposable, extractPureTextFromCell, mergeSets, Rectangle, Tools } from '@univerjs/core';
+import { CellValueType, Disposable, extractPureTextFromCell, Inject, mergeSets, Rectangle, Tools } from '@univerjs/core';
 import { BehaviorSubject } from 'rxjs';
 import { ensureNumeric, getCustomFilterFn, isNumericFilterFn, notEquals } from './custom-filters';
 import { CustomFilterOperator } from './types';
@@ -50,7 +50,8 @@ export class FilterModel extends Disposable {
     constructor(
         public readonly unitId: string,
         public readonly subUnitId: string,
-        private readonly _worksheet: Worksheet
+        private readonly _worksheet: Worksheet,
+        private readonly injector: Injector
     ) {
         super();
     }
@@ -91,9 +92,11 @@ export class FilterModel extends Disposable {
         unitId: string,
         subUnitId: string,
         worksheet: Worksheet,
-        autoFilter: IAutoFilter
+        autoFilter: IAutoFilter,
+        injector?: Injector
     ): FilterModel {
-        const filterModel = new FilterModel(unitId, subUnitId, worksheet);
+
+        const filterModel = new FilterModel(unitId, subUnitId, worksheet, injector!);
         filterModel._dump(autoFilter);
 
         return filterModel;
@@ -237,6 +240,7 @@ export class FilterModel extends Disposable {
                 this.unitId,
                 this.subUnitId,
                 this._worksheet,
+                this.injector,
                 criteria,
                 { getAlreadyFilteredOutRows: () => this._alreadyFilteredOutRows }
             );
@@ -308,6 +312,7 @@ export class FilterColumn extends Disposable {
         public readonly unitId: string,
         public readonly subUnitId: string,
         private readonly _worksheet: Worksheet,
+        private readonly injector: Injector,
 
         /**
          * A `FilterColumn` instance should not be created without a filter criteria.
@@ -403,10 +408,11 @@ export class FilterColumn extends Disposable {
                 continue;
             }
 
+            const cell = this._worksheet.getCell(row, col);
             const value = this._filterByValues
-                ? extractPureTextFromCell(this._worksheet.getCell(row, col))
+                ? extractPureTextFromCell(cell)
                 : getFilterValueForConditionalFiltering(this._worksheet, row, col);
-            if (!this._filterFn(value)) {
+            if (!this._filterFn(value, { unitId: this.unitId, subUnitId: this.subUnitId, row, col, cell, injector: this.injector })) {
                 filteredOutRows.add(row);
 
                 // Add all rows into filtered out rows if the cell is a merged cell.
@@ -431,11 +437,15 @@ export class FilterColumn extends Disposable {
     }
 }
 
+export interface IFilterFnParams {
+    unitId: string, subUnitId: string, row: number; col: number, injector: Injector, cell: Nullable<ICellData>
+}
+
 /**
  * Filter function is a close function which received a cell's content and determine this value is considered as
  * "matched" and the corresponding row would not be filtered out.
  */
-export type FilterFn = (value: Nullable<CellValue>) => boolean;
+export type FilterFn = (value: Nullable<CellValue>, params: IFilterFnParams) => boolean;
 
 /**
  * This functions take a `IFilterColumn` as input and return a function that can be used to filter rows.
@@ -479,12 +489,12 @@ function customFilterFnFactory(customFilters: ICustomFilters): FilterFn {
 
 function AND(filterFns: [FilterFn, FilterFn]): FilterFn {
     const [fn1, fn2] = filterFns;
-    return (value) => fn1(value) && fn2(value);
+    return (value, params) => fn1(value, params) && fn2(value, params);
 }
 
 function OR(filterFns: [FilterFn, FilterFn]): FilterFn {
     const [fn1, fn2] = filterFns;
-    return (value) => fn1(value) || fn2(value);
+    return (value, params) => fn1(value, params) || fn2(value, params);
 }
 
 function isCompoundCustomFilter(filter: FilterFn[]): filter is [FilterFn, FilterFn] {
@@ -499,22 +509,22 @@ function generateCustomFilterFn(filter: ICustomFilter): FilterFn {
     // Otherwise it goes to numeric match.
     if (filter.operator === CustomFilterOperator.NOT_EQUALS) {
         const ensured = ensureNumeric(compare);
-        if (!ensured) return (value) => notEquals.fn(value, compare);
+        if (!ensured) return (value, params) => notEquals.fn(value, compare, params);
     }
 
-    // numeric match
-    if (isNumericFilterFn(filter.operator)) {
-        const ensured = ensureNumeric(compare);
-        if (!ensured) return () => false;
+    // // numeric match
+    // if (isNumericFilterFn(filter.operator)) {
+    //     const ensured = ensureNumeric(compare);
+    //     if (!ensured) return () => false;
 
-        const customFilterFn = getCustomFilterFn(filter.operator);
-        const ensuredNumber = Number(compare);
-        return (value) => customFilterFn.fn(value, ensuredNumber);
-    }
+    //     const customFilterFn = getCustomFilterFn(filter.operator);
+    //     const ensuredNumber = Number(compare);
+    //     return (value) => customFilterFn.fn(value, ensuredNumber);
+    // }
 
     // text match
     const customFilterFn = getCustomFilterFn(filter.operator);
-    return (value) => customFilterFn.fn(value, compare);
+    return (value, params) => customFilterFn.fn(value, compare, params);
 }
 
 function getFilterValueForConditionalFiltering(worksheet: Worksheet, row: number, col: number): Nullable<string | number | boolean> {

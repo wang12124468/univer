@@ -22,7 +22,7 @@ import { CheckMarkSingle } from '@univerjs/icons';
 import { createContext, forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { combineLatest, of } from 'rxjs';
 import { CustomLabel } from '../../../components/custom-label/CustomLabel';
-import { IMenuManagerService } from '../../../services/menu/menu-manager.service';
+import { IMenuManagerService, IMenuSchema } from '../../../services/menu/menu-manager.service';
 import { useDependency } from '../../../utils/di';
 
 const TooltipWrapperContext = createContext({
@@ -165,10 +165,22 @@ export function DropdownMenuWrapper({
 
     const menuManagerService = useDependency(IMenuManagerService);
     const [hiddenStates, setHiddenStates] = useState<Record<string, boolean>>({});
+    const [menuItems, setMenuItems] = useState<IMenuSchema[]>([]);
+    
+    useEffect(() => {
+        function getMenuItems(): void {
+            const menuItems = (menuId && menuManagerService.getMenuByPositionKey(menuId)) || [];
+            // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+            setMenuItems(menuItems);
+        }
+        getMenuItems();
 
-    const menuItems = useMemo(() => {
-        return menuId ? menuManagerService.getMenuByPositionKey(menuId) : [];
-    }, [menuId]);
+        const subscription = menuManagerService.menuChanged$.subscribe(getMenuItems);
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [menuId, menuManagerService]);
 
     const filteredMenuItems = useMemo(() => {
         return menuItems.filter((item) => {

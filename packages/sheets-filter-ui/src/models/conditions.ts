@@ -15,7 +15,7 @@
  */
 
 import type { Nullable } from '@univerjs/core';
-import type { ICustomFilters, IFilterColumn } from '@univerjs/sheets-filter';
+import type { ICustomFilter, ICustomFilters, IFilterColumn } from '@univerjs/sheets-filter';
 import { BooleanNumber } from '@univerjs/core';
 import { CustomFilterOperator } from '@univerjs/sheets-filter';
 import { ExtendCustomFilterOperator, OperatorOrder } from './extended-operators';
@@ -38,6 +38,7 @@ export interface IFilterConditionItem {
     operator: FilterOperator;
     numOfParameters: number;
     order: OperatorOrder;
+    componentId?: string;
 
     /**
      * Name of the filter condition. Should be an i18n key.
@@ -107,14 +108,14 @@ export namespace FilterConditionItems {
         getDefaultFormParams: () => { throw new Error('[FilterConditionItems.EMPTY]: should not have initial form params!'); },
         testMappingParams: ({ operator1 }) => operator1 === ExtendCustomFilterOperator.EMPTY,
 
-        mapToFilterColumn: () => ({ customFilters: { customFilters: [{ val: '' }] } }),
+        mapToFilterColumn: () => ({ customFilters: { customFilters: [{ val: '', filterName: ExtendCustomFilterOperator.EMPTY }] } }),
         testMappingFilterColumn: (filterColumn) => {
             if (filterColumn.customFilters?.customFilters.length !== 1) {
                 return false;
             }
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
-            const mapped = firstCustomFilter.val === '' && firstCustomFilter.operator === undefined;
+            const mapped = firstCustomFilter.val === '' && isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.EMPTY, true);
             if (!mapped) {
                 return false;
             }
@@ -133,14 +134,14 @@ export namespace FilterConditionItems {
         getDefaultFormParams: () => { throw new Error('[FilterConditionItems.NOT_EMPTY]: should not have initial form params!'); },
         testMappingParams: ({ operator1 }) => operator1 === ExtendCustomFilterOperator.NOT_EMPTY,
 
-        mapToFilterColumn: () => ({ customFilters: { customFilters: [{ val: '', operator: CustomFilterOperator.NOT_EQUALS }] } }),
+        mapToFilterColumn: () => ({ customFilters: { customFilters: [{ val: '', operator: CustomFilterOperator.NOT_EQUALS, filterName: ExtendCustomFilterOperator.NOT_EMPTY }] } }),
         testMappingFilterColumn: (filterColumn) => {
             if (filterColumn.customFilters?.customFilters.length !== 1) {
                 return false;
             }
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
-            const canMap = firstCustomFilter.val === ' ' && firstCustomFilter.operator === CustomFilterOperator.NOT_EQUALS;
+            const canMap = isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.NOT_EMPTY, true);
             if (!canMap) {
                 return false;
             }
@@ -169,7 +170,7 @@ export namespace FilterConditionItems {
             if (val1 === '') return null;
 
             return {
-                customFilters: { customFilters: [{ val: `*${val1}*` }] },
+                customFilters: { customFilters: [{ val: `*${val1}*`, filterName: ExtendCustomFilterOperator.CONTAINS }] },
             };
         },
         testMappingFilterColumn: (filterColumn) => {
@@ -179,7 +180,7 @@ export namespace FilterConditionItems {
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
             const valAsString = firstCustomFilter.val.toString();
-            if (!firstCustomFilter.operator && valAsString.startsWith('*') && valAsString.endsWith('*')) {
+            if (isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.CONTAINS, true)) {
                 return { operator1: ExtendCustomFilterOperator.CONTAINS, val1: valAsString.slice(1, -1) };
             }
 
@@ -196,7 +197,7 @@ export namespace FilterConditionItems {
 
         getDefaultFormParams: () => ({ operator1: ExtendCustomFilterOperator.DOES_NOT_CONTAIN, val1: '' }),
         mapToFilterColumn: (mapParams) => ({
-            customFilters: { customFilters: [{ val: `*${mapParams.val1}*`, operator: CustomFilterOperator.NOT_EQUALS }] },
+            customFilters: { customFilters: [{ val: `*${mapParams.val1}*`, operator: CustomFilterOperator.NOT_EQUALS, filterName: ExtendCustomFilterOperator.DOES_NOT_CONTAIN }] },
         }),
         testMappingParams: (params) => {
             const [op] = getOnlyOperatorAndVal(params);
@@ -209,11 +210,7 @@ export namespace FilterConditionItems {
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
             const valAsString = firstCustomFilter.val.toString();
-            if (
-                firstCustomFilter.operator === CustomFilterOperator.NOT_EQUALS
-                && valAsString.startsWith('*')
-                && valAsString.endsWith('*')
-            ) {
+            if (isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.DOES_NOT_CONTAIN, true)) {
                 return { operator1: ExtendCustomFilterOperator.DOES_NOT_CONTAIN, val1: valAsString.slice(1, -1) };
             }
 
@@ -230,7 +227,7 @@ export namespace FilterConditionItems {
 
         getDefaultFormParams: () => ({ operator1: ExtendCustomFilterOperator.STARTS_WITH, val1: '' }),
         mapToFilterColumn: (mapParams) => ({
-            customFilters: { customFilters: [{ val: `${mapParams.val1}*` }] },
+            customFilters: { customFilters: [{ val: `${mapParams.val1}*`, filterName: ExtendCustomFilterOperator.STARTS_WITH }] },
         }),
         testMappingParams: (params) => {
             const [op] = getOnlyOperatorAndVal(params);
@@ -243,7 +240,7 @@ export namespace FilterConditionItems {
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
             const valAsString = firstCustomFilter.val.toString();
-            if (!firstCustomFilter.operator && valAsString.endsWith('*') && !valAsString.startsWith('*')) {
+            if (isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.STARTS_WITH, true)) {
                 return { operator1: ExtendCustomFilterOperator.STARTS_WITH, val1: valAsString.slice(0, -1) };
             }
 
@@ -260,7 +257,7 @@ export namespace FilterConditionItems {
 
         getDefaultFormParams: () => ({ operator1: ExtendCustomFilterOperator.ENDS_WITH, val1: '' }),
         mapToFilterColumn: (mapParams) => ({
-            customFilters: { customFilters: [{ val: `*${mapParams.val1}` }] },
+            customFilters: { customFilters: [{ val: `*${mapParams.val1}`, filterName: ExtendCustomFilterOperator.ENDS_WITH }] },
         }),
         testMappingParams: (params) => {
             const [op] = getOnlyOperatorAndVal(params);
@@ -273,7 +270,7 @@ export namespace FilterConditionItems {
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
             const valAsString = firstCustomFilter.val.toString();
-            if (!firstCustomFilter.operator && valAsString.startsWith('*') && !valAsString.endsWith('*')) {
+            if (isSameOperator(firstCustomFilter, ExtendCustomFilterOperator.ENDS_WITH, true)) {
                 return { operator1: ExtendCustomFilterOperator.ENDS_WITH, val1: valAsString.slice(1) };
             }
 
@@ -299,7 +296,7 @@ export namespace FilterConditionItems {
             if (val1 === '') return null;
 
             return {
-                customFilters: { customFilters: [{ val: val1! }] },
+                customFilters: { customFilters: [{ val: val1!, filterName: ExtendCustomFilterOperator.EQUALS }] },
             };
         },
         testMappingFilterColumn: (filterColumn) => {
@@ -307,7 +304,7 @@ export namespace FilterConditionItems {
                 return { operator1: ExtendCustomFilterOperator.EQUALS, val1: '' };
             }
 
-            if (filterColumn.customFilters?.customFilters.length === 1 && !filterColumn.customFilters.customFilters[0].operator) {
+            if (filterColumn.customFilters?.customFilters.length === 1 && isSameOperator(filterColumn.customFilters.customFilters[0], ExtendCustomFilterOperator.EQUALS, true)) {
                 return { operator1: ExtendCustomFilterOperator.EQUALS, val1: filterColumn.customFilters.customFilters[0].val.toString() };
             }
 
@@ -338,7 +335,7 @@ export namespace FilterConditionItems {
             }
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
-            if (firstCustomFilter.operator !== CustomFilterOperator.GREATER_THAN) {
+            if (!isSameOperator(firstCustomFilter, CustomFilterOperator.GREATER_THAN, true)) {
                 return false;
             }
 
@@ -368,7 +365,7 @@ export namespace FilterConditionItems {
             }
 
             const firstCustomFilter = filterColumn.customFilters.customFilters[0];
-            if (firstCustomFilter.operator !== CustomFilterOperator.GREATER_THAN_OR_EQUAL) {
+            if (!isSameOperator(firstCustomFilter, CustomFilterOperator.GREATER_THAN_OR_EQUAL, true)) {
                 return false;
             }
 
@@ -749,8 +746,32 @@ export namespace FilterConditionItems {
         CUSTOM,
     ];
 
+    export const CUSTOM_CONDITIONS: IFilterConditionItem[] = [];
+    export const CUSTOM_OPTIONS_FNS: { getPrimaryOptions?: any, getSecondaryOptions?: any } = { getPrimaryOptions: ((v: any) => v), getSecondaryOptions: ((v: any) => v) };
+
+    export function registerCondition<T extends IFilterConditionItem>(condition: T) {
+        CUSTOM_CONDITIONS.push(condition);
+    }
+
+    export function registerOptionsFn(options: { getPrimaryOptions?: any, getSecondaryOptions?: any }) {
+        CUSTOM_OPTIONS_FNS.getPrimaryOptions = options.getPrimaryOptions || CUSTOM_OPTIONS_FNS.getPrimaryOptions;
+        CUSTOM_OPTIONS_FNS.getSecondaryOptions = options.getSecondaryOptions || CUSTOM_OPTIONS_FNS.getSecondaryOptions;
+    }
+
+    export function getPrimaryOptions(options: any, condition: { conditionItem: Nullable<IFilterConditionItem>, conditionParams: Nullable<IFilterConditionFormParams> }) {
+        return CUSTOM_OPTIONS_FNS.getPrimaryOptions(options, condition);
+    }
+
+    export function getSecondaryOptions(operator: any): IFilterConditionItem[] {
+        return CUSTOM_OPTIONS_FNS.getSecondaryOptions(ALL_CONDITIONS.filter(c => c.numOfParameters !== 2), operator);
+    }
+
+    export function getAllCondtion() {
+        return [...CUSTOM_CONDITIONS, ...ALL_CONDITIONS];
+    }
+
     export function getItemByOperator(operator: FilterOperator): IFilterConditionItem {
-        const item = ALL_CONDITIONS.find((condition) => condition.operator === operator);
+        const item = getAllCondtion().find((condition) => condition.operator === operator);
         if (!item) {
             throw new Error(`[SheetsFilter]: no condition item found for operator: ${operator}`);
         }
@@ -758,17 +779,39 @@ export namespace FilterConditionItems {
         return item;
     }
 
+    export function getItemByFilter(filter: ICustomFilters | ICustomFilter): IFilterConditionItem {
+        const operator = getOperator(filter, true);
+        const item = getAllCondtion().find((condition) => condition.operator === operator);
+        if (!item) {
+            throw new Error(`[SheetsFilter]: no condition item found for operator: ${operator}`);
+        }
+
+        return item;
+    }
+
+    export function isSameOperator(filter: ICustomFilters | ICustomFilter, operator: any, isFilterName = false) {
+        return getOperator(filter, isFilterName) === operator;
+    }
+
+    export function getOperator(filter: ICustomFilters | ICustomFilter, isFilterName = false) {
+        if(isFilterName) {
+            return filter && (filter.filterName || (filter as ICustomFilter).operator);
+        }
+        return filter && ((filter as ICustomFilter).operator || filter.filterName);
+    }
+
     export function testMappingParams(mapParams: IFilterConditionFormParams, numOfParameters: number): IFilterConditionItem {
         // TODO@wzhudev: iteration here can be optimized
         // We match operators with same count of parameters first.
-        for (const condition of ALL_CONDITIONS.filter((condition) => condition.numOfParameters === numOfParameters)) {
+        const allConditions = getAllCondtion();
+        for (const condition of allConditions.filter((condition) => condition.numOfParameters === numOfParameters)) {
             if (condition.numOfParameters !== 0 && condition.testMappingParams(mapParams)) {
                 return condition;
             }
         }
 
         // And fallback to others.
-        for (const condition of ALL_CONDITIONS) {
+        for (const condition of allConditions) {
             if (condition.testMappingParams(mapParams)) {
                 return condition;
             }
@@ -778,7 +821,7 @@ export namespace FilterConditionItems {
     }
 
     export function getInitialFormParams(operator: FilterOperator): IFilterConditionFormParams {
-        const condition = ALL_CONDITIONS.find((condition) => condition.operator === operator)!;
+        const condition = getItemByOperator(operator);
         if (condition?.numOfParameters === 0) {
             return { operator1: condition.operator };
         }
@@ -795,8 +838,15 @@ export namespace FilterConditionItems {
             return [NONE, {}];
         }
 
-        for (const condition of ALL_CONDITIONS) {
-            const mapParams = condition.testMappingFilterColumn(filterColumn);
+        let operator = getOperator(filterColumn.customFilters!, true);
+        if(!operator) {
+            const firstCustomFilter = filterColumn.customFilters?.customFilters?.[0];
+            operator = getOperator(firstCustomFilter!, true);
+        }
+
+        if(operator) {
+            const condition = getItemByOperator(operator);
+            const mapParams = condition?.testMappingFilterColumn(filterColumn);
             if (mapParams) {
                 return [condition, mapParams];
             }
@@ -804,6 +854,15 @@ export namespace FilterConditionItems {
 
         // Return NONE by default.
         return [NONE, {}];
+    }
+
+    export function tryParseJSON(o: any) {
+        if(!o || typeof o !== 'string') { return o }
+        try {
+            return JSON.parse(o);
+        } catch (error) {
+            return o
+        }
     }
 }
 

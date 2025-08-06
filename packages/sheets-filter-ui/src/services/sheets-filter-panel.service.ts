@@ -286,10 +286,12 @@ export class ByConditionsModel extends Disposable implements IFilterByModel {
     private readonly _conditionItem$: BehaviorSubject<IFilterConditionItem>;
     readonly conditionItem$: Observable<IFilterConditionItem>;
     get conditionItem(): IFilterConditionItem { return this._conditionItem$.getValue(); }
+    initConditionItem: Nullable<IFilterConditionItem>;
 
     private readonly _filterConditionFormParams$: BehaviorSubject<IFilterConditionFormParams>;
     readonly filterConditionFormParams$: Observable<IFilterConditionFormParams>;
     get filterConditionFormParams(): IFilterConditionFormParams { return this._filterConditionFormParams$.getValue(); }
+    initFilterConditionFormParams: Nullable<IFilterConditionFormParams>;
 
     constructor(
         private readonly _filterModel: FilterModel,
@@ -299,12 +301,13 @@ export class ByConditionsModel extends Disposable implements IFilterByModel {
         @ICommandService private readonly _commandService: ICommandService
     ) {
         super();
-
         this._conditionItem$ = new BehaviorSubject<IFilterConditionItem>(conditionItem);
         this.conditionItem$ = this._conditionItem$.asObservable();
+        this.initConditionItem = conditionItem;
 
         this._filterConditionFormParams$ = new BehaviorSubject(conditionParams);
         this.filterConditionFormParams$ = this._filterConditionFormParams$.asObservable();
+        this.initFilterConditionFormParams = conditionParams;
     }
 
     override dispose(): void {
@@ -349,7 +352,7 @@ export class ByConditionsModel extends Disposable implements IFilterByModel {
      * `IFilterConditionFormParams` and load default condition form params.
      */
     onPrimaryConditionChange(operator: FilterOperator): void {
-        const conditionItem = FilterConditionItems.ALL_CONDITIONS.find((item) => item.operator === operator);
+        const conditionItem = FilterConditionItems.getItemByOperator(operator);
         if (!conditionItem) {
             throw new Error(`[ByConditionsModel]: condition item not found for operator: ${operator}!`);
         }
@@ -372,10 +375,10 @@ export class ByConditionsModel extends Disposable implements IFilterByModel {
             delete newParams.and;
         }
 
-        if (typeof params.and !== 'undefined' || typeof params.operator1 !== 'undefined' || typeof params.operator2 !== 'undefined') {
-            const conditionItem = FilterConditionItems.testMappingParams(newParams as IFilterConditionFormParams, this.conditionItem.numOfParameters);
-            this._conditionItem$.next(conditionItem);
-        }
+        // if (typeof params.and !== 'undefined' || typeof params.operator1 !== 'undefined' || typeof params.operator2 !== 'undefined') {
+        //     const conditionItem = FilterConditionItems.testMappingParams(newParams as IFilterConditionFormParams, this.conditionItem.numOfParameters);
+        //     this._conditionItem$.next(conditionItem);
+        // }
 
         this._filterConditionFormParams$.next(newParams as IFilterConditionFormParams);
     }

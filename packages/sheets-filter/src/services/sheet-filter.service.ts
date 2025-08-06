@@ -21,6 +21,8 @@ import {
     Disposable,
     fromCallback,
     ICommandService,
+    Inject,
+    Injector,
     IResourceManagerService,
     IUniverInstanceService,
     UniverInstanceType,
@@ -57,10 +59,10 @@ export class SheetsFilterService extends Disposable {
     constructor(
         @IResourceManagerService private readonly _resourcesManagerService: IResourceManagerService,
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
-        @ICommandService private readonly _commandService: ICommandService
+        @ICommandService private readonly _commandService: ICommandService,
+        @Inject(Injector) private readonly _injector: Injector
     ) {
         super();
-
         this._initModel();
         this._initActiveFilterModel();
     }
@@ -85,8 +87,8 @@ export class SheetsFilterService extends Disposable {
         if (!worksheet) {
             throw new Error(`[SheetsFilterService]: could not create "FilterModel" on a non-existing worksheet ${subUnitId}!`);
         }
-
-        const filterModel = new FilterModel(unitId, subUnitId, worksheet);
+        
+        const filterModel = new FilterModel(unitId, subUnitId, worksheet, this._injector);
         this._cacheFilterModel(unitId, subUnitId, filterModel);
         return filterModel;
     }
@@ -168,7 +170,7 @@ export class SheetsFilterService extends Disposable {
         const workbook = this._univerInstanceService.getUniverSheetInstance(unitId)!;
         Object.keys(json).forEach((worksheetId: WorksheetID) => {
             const autoFilter = json[worksheetId]!;
-            const filterModel = FilterModel.deserialize(unitId, worksheetId, workbook.getSheetBySheetId(worksheetId)!, autoFilter);
+            const filterModel = FilterModel.deserialize(unitId, worksheetId, workbook.getSheetBySheetId(worksheetId)!, autoFilter, this._injector);
             this._cacheFilterModel(unitId, worksheetId, filterModel);
         });
     }

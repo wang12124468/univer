@@ -62,7 +62,7 @@ export interface ISelectProps {
     /**
      * The callback function that is triggered when the value is changed
      */
-    onChange: (value: string) => void;
+    onChange: (value: string, item: any) => void;
 }
 
 export const selectClassName = clsx(`
@@ -89,6 +89,7 @@ export function Select(props: ISelectProps) {
 
     const items: IDropdownMenuProps['items'] = useMemo(() => {
         const selectOptions: (IOption | IOptionSeparator)[] = [];
+        const map = new Map();
 
         for (const option of options) {
             if (option.options) {
@@ -98,6 +99,7 @@ export function Select(props: ISelectProps) {
                         value: opt.value!,
                         disabled: opt.disabled,
                     });
+                    map.set(opt.value, opt);
                 });
                 selectOptions.push({
                     type: 'separator',
@@ -108,6 +110,7 @@ export function Select(props: ISelectProps) {
                     value: option.value!,
                     disabled: option.disabled,
                 });
+                map.set(option.value, option);
             }
         }
 
@@ -117,7 +120,7 @@ export function Select(props: ISelectProps) {
             hideIndicator: true,
             options: selectOptions,
             onSelect: (item) => {
-                onChange(item);
+                onChange(item, map.get(item));
             },
         }];
     }, [options]);

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import type { CellValue, Nullable } from '@univerjs/core';
+import type { CellValue, ICellData, Nullable } from '@univerjs/core';
 import { isNumeric } from '@univerjs/core';
 import { CustomFilterOperator } from './types';
+import { IFilterFnParams } from './filter-model';
 
 export interface IFilterFn<P extends unknown[]> {
     label?: string;
@@ -47,7 +48,7 @@ export interface ICustomFilterFn<P extends unknown[]> extends IFilterFn<P> {
     fn: (...params: P) => boolean;
 }
 
-type TwoParameters<C = string> = [value: Nullable<CellValue>, compare: C];
+export type TwoParameters<C = string> = [value: Nullable<CellValue>, compare: C, params: IFilterFnParams];
 
 export const greaterThan: ICustomFilterFn<TwoParameters<number>> = {
     operator: CustomFilterOperator.GREATER_THAN,
@@ -55,8 +56,11 @@ export const greaterThan: ICustomFilterFn<TwoParameters<number>> = {
         if (!ensureNumber(value)) {
             return false;
         }
+        if (!ensureNumeric(compare)) {
+            return false;
+        }
 
-        return value > compare;
+        return value > Number(compare);
     },
 };
 
@@ -67,7 +71,11 @@ export const greaterThanOrEqualTo: ICustomFilterFn<TwoParameters<number>> = {
             return false;
         }
 
-        return value >= compare;
+        if (!ensureNumeric(compare)) {
+            return false;
+        }
+
+        return value >= Number(compare);
     },
 };
 
@@ -78,7 +86,11 @@ export const lessThan: ICustomFilterFn<TwoParameters<number>> = {
             return false;
         }
 
-        return value < compare;
+        if (!ensureNumeric(compare)) {
+            return false;
+        }
+
+        return value < Number(compare);
     },
 };
 
@@ -89,7 +101,11 @@ export const lessThanOrEqualTo: ICustomFilterFn<TwoParameters<number>> = {
             return false;
         }
 
-        return value <= compare;
+        if (!ensureNumeric(compare)) {
+            return false;
+        }
+
+        return value <= Number(compare);
     },
 };
 
@@ -100,7 +116,11 @@ export const equals: ICustomFilterFn<TwoParameters<number>> = {
             return false;
         }
 
-        return value === compare;
+        if (!ensureNumeric(compare)) {
+            return false;
+        }
+
+        return value === Number(compare);
     },
 };
 
@@ -157,6 +177,10 @@ export function getCustomFilterFn(operator?: CustomFilterOperator): ICustomFilte
     }
 
     return CustomFilterFnRegistry.get(operator)!;
+}
+
+export function registerCustomFilterFn(fn: ICustomFilterFn<TwoParameters<any>>) {
+    CustomFilterFnRegistry.set(fn.operator!, fn);
 }
 
 function ensureNumber(value: Nullable<CellValue>): value is number {

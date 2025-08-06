@@ -276,7 +276,7 @@ export class MenuManagerService extends Disposable implements IMenuManagerServic
             }
         }
 
-        return result;
+        return result.sort((a, b) => a.order - b.order);
     }
 
     /**

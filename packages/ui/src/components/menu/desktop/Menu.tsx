@@ -36,7 +36,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { combineLatest, isObservable, of } from 'rxjs';
 import { ILayoutService } from '../../../services/layout/layout.service';
 import { MenuItemType } from '../../../services/menu/menu';
-import { IMenuManagerService } from '../../../services/menu/menu-manager.service';
+import { IMenuManagerService, IMenuSchema } from '../../../services/menu/menu-manager.service';
 import { ContextMenuGroup } from '../../../services/menu/types';
 import { useDependency, useObservable } from '../../../utils/di';
 import { CustomLabel } from '../../custom-label/CustomLabel';
@@ -67,8 +67,22 @@ function MenuWrapper(props: IBaseMenuProps) {
     const { menuType, onOptionSelect } = props;
     const localeService = useDependency(LocaleService);
     const menuManagerService = useDependency(IMenuManagerService);
+    const [menuItems, setMenuItems] = useState<IMenuSchema[]>([]);
 
-    const menuItems = useMemo(() => menuType ? menuManagerService.getMenuByPositionKey(menuType) : [], [menuType, menuManagerService]);
+    useEffect(() => {
+        function getMenuItems(): void {
+            const menuItems = (menuType && menuManagerService.getMenuByPositionKey(menuType)) || [];
+            // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+            setMenuItems(menuItems);
+        }
+        getMenuItems();
+
+        const subscription = menuManagerService.menuChanged$.subscribe(getMenuItems);
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [menuType, menuManagerService]);
 
     const [hiddenStates, setHiddenStates] = useState<Record<string, boolean>>({});
     const filteredMenuItems = useMemo(() => {
@@ -189,9 +203,11 @@ function MenuOptionsWrapper(props: IBaseMenuProps) {
 /** @deprecated */
 export const Menu = (props: IBaseMenuProps) => {
     // @ts-ignore
-    const { overViewport, style, getPopupContainer, ...restProps } = props;
+    const { overViewport, style, getPopupContainer, visible, ...restProps } = props;
     const [menuEl, setMenuEl] = useState<HTMLDListElement>();
     const layoutService = useDependency(ILayoutService);
+
+    const [openKeys, setOpenKeys ] = useState([]);
 
     useScrollYOverContainer(overViewport === 'scroll' ? menuEl : null, layoutService.rootContainerElement);
 
@@ -206,6 +222,7 @@ export const Menu = (props: IBaseMenuProps) => {
             ref={handleSetMenuEl}
             selectable={false}
             getPopupContainer={getPopupContainer}
+            { ...(visible ? {} : { openKeys: [] }) }
         >
             <MenuOptionsWrapper {...restProps} />
             <MenuWrapper {...restProps} />
@@ -277,13 +294,15 @@ function MenuItem({ menuItem, onClick }: IMenuItemProps) {
 
     const renderSelectorType = () => {
         const selections = selectionsFromObservable ?? (item.selections as IValueOption[] | undefined) ?? [];
-
+        // eslint-disable-next-line ts/no-explicit-any
+        const useFocus = (item as any).useFocus;
         if (selections.length > 0) {
             return (
                 <DesignSubMenu
                     key={item.id}
                     eventKey={item.id}
                     popupOffset={[18, 0]}
+                    useFocus={useFocus}
                     title={(
                         <span className={contentClassName}>
                             <CustomLabel
@@ -334,12 +353,15 @@ function MenuItem({ menuItem, onClick }: IMenuItemProps) {
 
     const renderSubItemsType = () => {
         const item = menuItem as IDisplayMenuItem<IMenuSelectorItem>;
+        // eslint-disable-next-line ts/no-explicit-any
+        const useFocus = (item as any).useFocus;
         return (
             <DesignSubMenu
                 popupClassName={item.id || ''}
                 key={item.id}
                 eventKey={item.id}
                 popupOffset={[18, 0]}
+                useFocus={useFocus}
                 title={(
                     <span className={contentClassName}>
                         <CustomLabel title={item.title} icon={item.icon} label={item.label} onChange={onChange} />
