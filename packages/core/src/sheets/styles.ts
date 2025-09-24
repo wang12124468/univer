@@ -67,6 +67,17 @@ export class Styles {
         return this._styles[id];
     }
 
+    addStyleById(id: string, data: IStyleData) {
+        if (data == null) return;
+        const styleObject = JSON.stringify(data);
+        const result = this.search(data, styleObject);
+        if (result !== '-1') {
+            return result;
+        }
+        this._cacheMap.set(styleObject, id);
+        this._styles[id] = data;
+    }
+
     add(data: IStyleData, styleObject: string): string {
         const id = Tools.generateRandomId(6);
         this._styles[id] = data;

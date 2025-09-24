@@ -91,7 +91,7 @@ export function BarSetting() {
             return;
         }
         const { item, index, action } = seryOrSeries;
-        let _seriesIndexes = seriesIndexes.map(v => +v.id);
+        const _seriesIndexes = seriesIndexes.map(v => +v.id);
         if(action === 'add') {
             _seriesIndexes.push(+item.id);
         } else if(action === 'update') {
@@ -100,7 +100,8 @@ export function BarSetting() {
             _seriesIndexes.splice(+index, 1);
         }
 
-        const data: IChartSnapshot = { context: { ...snapshot.context, seriesIndexes: _seriesIndexes } };
+        const data: IChartSnapshot = { context: { seriesIndexes: _seriesIndexes } };
+        Object.assign(snapshot.context || {} as object, { seriesIndexes: [] });
         model.onApplyWithOpts(merge({}, snapshot, data), { replaceMerge: ['xAxis', 'yAxis', 'series'] });
     }, [seriesIndexes, snapshot, model]);
 

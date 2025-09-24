@@ -92,7 +92,7 @@ export function RadarSetting() {
             return;
         }
         const { item, index, action } = seryOrSeries;
-        let _seriesIndexes = seriesIndexes.map(v => +v.id);
+        const _seriesIndexes = seriesIndexes.map(v => +v.id);
         const seriesIndexMaxMap = settings.seriesIndexMaxMap;
         if(action === 'add') {
             _seriesIndexes.push(+item.id);
@@ -103,7 +103,8 @@ export function RadarSetting() {
             _seriesIndexes.splice(+index, 1);
         }
 
-        const data: IChartSnapshot = { context: { ...snapshot.context, seriesIndexes: _seriesIndexes, seriesIndexMaxMap } };
+        const data: IChartSnapshot = { context: { seriesIndexes: _seriesIndexes } };
+        Object.assign(snapshot.context || {} as object, { seriesIndexes: [], seriesIndexMaxMap: {} });
         model.onApplyWithOpts(merge({}, snapshot, data), { replaceMerge: ['xAxis', 'yAxis', 'series'] });
     }, [seriesIndexes, snapshot, model]);
 
@@ -216,7 +217,7 @@ function SeryItem(props: ISeryItemProps) {
                         onMaxChange(item.id, e!);
                     }
                 }} />
-                
+
             <div
                 className={`
                   ${prefixCls}-sery-item-actions

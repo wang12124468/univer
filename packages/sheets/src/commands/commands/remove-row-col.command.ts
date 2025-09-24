@@ -81,58 +81,60 @@ export const RemoveRowByRangeCommand: ICommand<IRemoveRowByRangeCommandParams> =
         const sheetInterceptorService = accessor.get(SheetInterceptorService);
         const { range, unitId, subUnitId } = params;
 
-        const visibleRanges = getVisibleRanges([range], accessor, unitId, subUnitId).reverse();
-
         const undoMutations: IMutationInfo[] = [];
         const redoMutations: IMutationInfo[] = [];
 
-        visibleRanges.forEach((visibleRange) => {
-            const undos: IMutationInfo[] = [];
-            const redos: IMutationInfo[] = [];
-            const removeRowsParams: IRemoveRowsMutationParams = {
-                unitId,
-                subUnitId,
-                range: visibleRange,
-            };
-            const undoRemoveRowsParams: IInsertRowMutationParams = RemoveRowsUndoMutationFactory(
-                removeRowsParams,
-                worksheet
-            );
+        const removeRowsParams: IRemoveRowsMutationParams = {
+            unitId,
+            subUnitId,
+            range: range,
+        };
+        const undoRemoveRowsParams: IInsertRowMutationParams = RemoveRowsUndoMutationFactory(
+            removeRowsParams,
+            worksheet
+        );
 
-            const removedRows = worksheet.getCellMatrix().getSlice(visibleRange.startRow, visibleRange.endRow, 0, worksheet.getColumnCount() - 1);
-            const undoSetRangeValuesParams: ISetRangeValuesMutationParams = {
-                unitId,
-                subUnitId,
-                cellValue: removedRows.getMatrix(),
-            };
+        const removedRows = worksheet.getCellMatrix().getSlice(range.startRow, range.endRow, 0, worksheet.getColumnCount() - 1);
+        const undoSetRangeValuesParams: ISetRangeValuesMutationParams = {
+            unitId,
+            subUnitId,
+            cellValue: removedRows.getMatrix(),
+        };
 
-            const intercepted = sheetInterceptorService.onCommandExecute({
-                id: RemoveRowCommandId,
-                params: { range: visibleRange } as IRemoveRowColCommandParams,
-            });
+        redoMutations.push({ id: RemoveRowMutation.id, params: removeRowsParams });
+        undoMutations.push({ id: InsertRowMutation.id, params: undoRemoveRowsParams });
+        undoMutations.push({ id: SetRangeValuesMutation.id, params: undoSetRangeValuesParams });
 
-            redos.push(...(intercepted.preRedos ?? []));
-            redos.push({ id: RemoveRowMutation.id, params: removeRowsParams });
-            redos.push(...(intercepted.redos ?? []));
-            undos.push(...(intercepted.preUndos ?? []));
-            undos.push({ id: InsertRowMutation.id, params: undoRemoveRowsParams });
-            undos.push({ id: SetRangeValuesMutation.id, params: undoSetRangeValuesParams });
-            undos.push(...(intercepted.undos ?? []));
-
-            redoMutations.push(...redos);
-            undoMutations.unshift(...undos);
+        const intercepted = sheetInterceptorService.onCommandExecute({
+            id: RemoveRowCommandId,
+            params: { range } as IRemoveRowColCommandParams,
         });
 
-        redoMutations.push(followSelectionOperation(range, workbook, worksheet));
-
         const commandService = accessor.get(ICommandService);
-        const result = sequenceExecute(redoMutations, commandService);
+        const result = sequenceExecute(
+            [
+                ...(intercepted.preRedos ?? []),
+                ...redoMutations,
+                ...intercepted.redos,
+                followSelectionOperation(range, workbook, worksheet),
+            ],
+            commandService
+        );
+
         if (result.result) {
             const undoRedoService = accessor.get(IUndoRedoService);
             undoRedoService.pushUndoRedo({
                 unitID: unitId,
-                undoMutations,
-                redoMutations,
+                undoMutations: [
+                    ...(intercepted.preUndos ?? []),
+                    ...undoMutations,
+                    ...intercepted.undos,
+                ],
+                redoMutations: [
+                    ...(intercepted.preRedos ?? []),
+                    ...redoMutations,
+                    ...intercepted.redos,
+                ],
             });
             return true;
         }

@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
+/* eslint-disable ts/no-explicit-any */
+
 import type { IChartSnapshot } from '@univerjs/sheets-chart';
 import type { ISelectOption, ISettingConfig } from '../interface';
+import { merge } from '@univerjs/core';
 import { DraggableList, Input, Select } from '@univerjs/design';
+import { SequenceIcon } from '@univerjs/icons';
 import { useDependency } from '@univerjs/ui';
 import { useCallback, useContext, useMemo } from 'react';
+import { UpdateChartStrategy } from '../../../../services/chart-render';
 import { SheetsChartUIService } from '../../../../services/sheets-chart-ui.service';
 import { registerComponent } from '../../widget';
 import { ChartItem } from '../common/chart-item';
 import { Tools } from '../common/tools';
 import { Context } from '../context/Context';
 import { useSettingHook } from './hook/useSettingHook';
-import { SequenceIcon } from '@univerjs/icons';
 import './style/index.less';
-import { UpdateChartStrategy } from '../../../../services/chart-render';
-import { merge } from '@univerjs/core';
 
 export interface IPieSettingConfig extends ISettingConfig {
 
@@ -48,8 +50,8 @@ export function PieSetting() {
         const newTemp = {
             refString,
             range: sheetRange?.range,
-            refStringError: !sheetRange
-        }
+            refStringError: !sheetRange,
+        };
         setTemp(Object.assign({}, temp, newTemp));
         if (!sheetRange?.range) { return; }
         chartUIService.highlight(sheetRange?.range);
@@ -69,33 +71,42 @@ export function PieSetting() {
 
     const onApplyCategory = useCallback((categoryIndex: any) => {
         const snapshot = model.snapshot.value!;
-        const dataset = model.dataSource?.data!;
-        const data: IChartSnapshot = { context: { ...snapshot.context, categoryIndex, seriesIndexes: getDefaultSeriesIndexes(dataset, categoryIndex) } };
+        const dataset = model.dataSource?.data;
+
+        const data: IChartSnapshot = { context: { categoryIndex } };
+        if(!snapshot.context) { snapshot.context = {}; }
+        if(!snapshot.context?.seriesIndexes?.every(i => +i !== +categoryIndex)) {
+            snapshot.context.seriesIndexes = getDefaultSeriesIndexes(dataset!, categoryIndex);
+        } else {
+            // snapshot.context.seriesIndexes = snapshot.context?.seriesIndexes;
+        }
+
         model.onApplyWithOpts(merge({}, snapshot, data), { replaceMerge: ['series', 'xAxis', 'yAxis'] });
-    }, [model]);
+    }, [model, settings]);
 
-    const seriesIndexes = useMemo(() => (settings.seriesIndexes || []).map((index) => ({ id: index + '' })), [settings]);
+    const seriesIndexes = useMemo(() => (settings.seriesIndexes || []).map((index) => ({ id: `${index}` })), [settings]);
 
-    const onApplySeries = useCallback((seryOrSeries: { item: { id: string|number }, index: string|number, action: 'add' | 'update' | 'delete' } | { id: string|number }[]) => {
-        if(Array.isArray(seryOrSeries)) {
-            if(Tools.isSameSeriesIndexes(seryOrSeries.map(v => v.id), seriesIndexes.map(v => v.id))) {
+    const onApplySeries = useCallback((seryOrSeries: { item: { id: string | number }; index: string | number; action: 'add' | 'update' | 'delete' } | { id: string | number }[]) => {
+        if (Array.isArray(seryOrSeries)) {
+            if (Tools.isSameSeriesIndexes(seryOrSeries.map((v) => v.id), seriesIndexes.map((v) => v.id))) {
                 return;
             }
-            const data: IChartSnapshot = { context: { ...snapshot.context, seriesIndexes: seryOrSeries.map(sery => +sery.id) } };
+            const data: IChartSnapshot = { context: { ...snapshot.context, seriesIndexes: seryOrSeries.map((sery) => +sery.id) } };
             model.onApplyWithOpts(merge({}, snapshot, data), { replaceMerge: ['xAxis', 'yAxis', 'series'] });
             return;
         }
         const { item, index, action } = seryOrSeries;
-        let _seriesIndexes = seriesIndexes.map(v => +v.id);
-        if(action === 'add') {
+        const _seriesIndexes = seriesIndexes.map((v) => +v.id);
+        if (action === 'add') {
             _seriesIndexes.push(+item.id);
-        } else if(action === 'update') {
-            _seriesIndexes[+index] = +item.id
+        } else if (action === 'update') {
+            _seriesIndexes[+index] = +item.id;
         } else {
             _seriesIndexes.splice(+index, 1);
         }
 
-        const data: IChartSnapshot = { context: { ...snapshot.context, seriesIndexes: _seriesIndexes } };
+        const data: IChartSnapshot = { context: { seriesIndexes: _seriesIndexes } };
+        Object.assign(snapshot.context || {} as object, { seriesIndexes: [] });
         model.onApplyWithOpts(merge({}, snapshot, data), { replaceMerge: ['xAxis', 'yAxis', 'series'] });
     }, [seriesIndexes, snapshot, model]);
 
@@ -109,19 +120,20 @@ export function PieSetting() {
                 <Input value={settings.refString} onChange={onChangeRange} onFocus={onFocusRange} onBlur={onApplyRange} onKeyDown={(e) => e.code === 'enter' && onApplyRange()} />
             </ChartItem>
             <ChartItem title="类目">
-                <Select className="univer-w-full" value={`${settings.categoryIndex}`} options={categories} onChange={(e) => onApplyCategory(+e)} />
+                <Select className="univer-w-full" value={`${settings.categoryIndex}`} options={categories} onChange={onApplyCategory} />
             </ChartItem>
-            <ChartItem title="系列" >
+            <ChartItem title="系列">
                 <DraggableList
                     list={seriesIndexes.slice(0, 1)}
                     // onListChange={() => {}}
+                    key={settings.categoryIndex}
                     onListChange={onApplySeries}
                     idKey="id"
                     draggableHandle="[data-u-comp=sort-panel-item-handler]"
                     itemRender={(item, index) => (
                         <SeryItem
                             item={item}
-                            options={Tools.calcSeries(categories, seriesIndexes.map(v => v.id).concat([settings.categoryIndex + '']), [item.id])}
+                            options={Tools.calcSeries(categories, [`${settings.categoryIndex}`], [item.id])}
                             onSelect={(item) => onApplySeries({ item: { id: item.value }, index, action: 'update' })}
                             onDelete={() => onApplySeries({ item, index, action: 'delete' })}
                         />
@@ -137,7 +149,7 @@ export function PieSetting() {
 registerComponent('chart-setting.pie', PieSetting);
 
 interface ISeryItemProps {
-    item: { id: string|number };
+    item: { id: string | number };
     options: ISelectOption[];
     onSelect: (item: ISelectOption) => void;
     onDelete: () => void;
@@ -167,8 +179,7 @@ function SeryItem(props: ISeryItemProps) {
                 value={`${item.id}`}
                 options={options}
                 onChange={(e, item) => onSelect(item)}
-            >
-            </Select>
+            />
             <div
                 className={`
                   ${prefixCls}-sery-item-actions

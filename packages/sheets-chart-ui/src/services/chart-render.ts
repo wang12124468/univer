@@ -29,10 +29,11 @@ import { ChartDataSource, createChartDataSource, IChartContext, IChartOption, IC
 import { ICanvasFloatDom, RemoveSheetDrawingCommand, IDeleteDrawingCommandParams, SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { ISheetSelectionRenderService, SheetCanvasPopManagerService } from '@univerjs/sheets-ui';
 import { BehaviorSubject } from 'rxjs';
-import { SetChartSettingVisibleCommand, UpdateChartCommand } from '../commands/commands/sheets-chart.command';
+import { RemoveChartCommand, SetChartSettingVisibleCommand, UpdateChartCommand } from '../commands/commands/sheets-chart.command';
 import { Chart, IChartSetOptionOpts } from './chart';
 import { SheetsChartBlueprintService } from './sheets-chart-blueprint.service';
 import { defaultToOption } from '../blueprint/liner.blueprint';
+import { IDrawingManagerService } from '@univerjs/drawing';
 
 interface ReadableChartRender extends ChartRender {
     version: number;
@@ -134,7 +135,7 @@ export class ChartRenderModel extends Disposable {
 
     get chartId() { return this._sheetChartSnapshot.chartId; }
     get chartType() { return this._sheetChartSnapshot.chartType; }
-    
+
     get snapshot() { return this._sheetChartSnapshot; }
 
     constructor(
@@ -142,6 +143,7 @@ export class ChartRenderModel extends Disposable {
         public subUnitId: string,
         private _sheetChartSnapshot: SheetChartSnapshot,
         @ICommandService private readonly _commandService: ICommandService,
+        @IDrawingManagerService private readonly _drawingManagerService: IDrawingManagerService,
         @Inject(Injector) private readonly _injector: Injector,
         @Inject(SheetCanvasFloatDomManagerService) private readonly _sheetCanvasFloatDomManagerService: SheetCanvasFloatDomManagerService,
         @Inject(IRenderManagerService) private _renderManagerService: IRenderManagerService,
@@ -257,7 +259,10 @@ export class ChartRenderModel extends Disposable {
         this.chart?.dispose();
         this.chart = null as any;
 
-        this._commandService.executeCommand(RemoveSheetDrawingCommand.id, { unitId: this.unitId, drawings: [{ unitId: this.unitId, subUnitId: this.subUnitId, drawingId: this.chartId }] } as IDeleteDrawingCommandParams);
+        const drawing = this._drawingManagerService.getDrawingByParam({ unitId: this.unitId, subUnitId: this.subUnitId, drawingId: this.chartId });
+        if(drawing) {
+            this._commandService.executeCommand(RemoveSheetDrawingCommand.id, { unitId: this.unitId, drawings: [drawing] } as IDeleteDrawingCommandParams);
+        }
         this._commandService.executeCommand(SetChartSettingVisibleCommand.id, { unitId: this.unitId, subUnitId: this.subUnitId, chartId: this.chartId, visible: false });
     }
 }

@@ -14,43 +14,42 @@
  * limitations under the License.
  */
 
-import {
-    ArrangeTypeEnum,
-    DisposableCollection,
+import type {
     IUnitRangeName,
     Nullable,
-    UniverInstanceType,
     Workbook,
     Worksheet,
 } from '@univerjs/core';
 import type { IChartRange, SheetChartModel } from '@univerjs/sheets-chart';
+import type { IDeleteDrawingCommandParams } from '@univerjs/sheets-drawing-ui';
 import {
     Disposable,
+    DisposableCollection,
     DrawingTypeEnum,
     ICommandService,
     Inject,
     Injector,
     isValidRange,
     IUniverInstanceService,
+    UniverInstanceType,
 } from '@univerjs/core';
 import { IDrawingManagerService } from '@univerjs/drawing';
 import { deserializeRangeWithSheet } from '@univerjs/engine-formula';
 import { getSheetCommandTarget } from '@univerjs/sheets';
 import { SheetsChartService } from '@univerjs/sheets-chart';
+import { RemoveSheetDrawingCommand } from '@univerjs/sheets-drawing-ui';
 import { IMarkSelectionService, SheetCanvasPopManagerService } from '@univerjs/sheets-ui';
-import { IShortcutService, ISidebarService } from '@univerjs/ui';
+import { ISidebarService } from '@univerjs/ui';
+import { BehaviorSubject, of, switchMap } from 'rxjs';
 import { register } from '../blueprint/useDefault';
 import { RemoveChartCommand, ToggleChartSettingVisibleCommand } from '../commands/commands/sheets-chart.command';
 import { CHART_SETTING_PANEL_ID, ChartRender } from './chart-render';
 import { SheetsChartBlueprintService } from './sheets-chart-blueprint.service';
-import { BehaviorSubject, of, switchMap } from 'rxjs';
-import { SetDrawingArrangeCommand } from '@univerjs/sheets-drawing-ui';
-import { ISetDrawingArrangeCommandParams } from '@univerjs/sheets-drawing-ui/commands/commands/set-drawing-arrange.command.js';
 
 export class SheetsChartUIService extends Disposable {
     private _chartRenders = new Map<string, Map<string, ChartRender>>();
 
-    private _activeChart$ = new BehaviorSubject<Nullable<{ id: string, unitId: string, subUnitId: string, chartId: string}>>(null);
+    private _activeChart$ = new BehaviorSubject<Nullable<{ id: string; unitId: string; subUnitId: string; chartId: string }>>(null);
     readonly activeChart$ = this._activeChart$.asObservable();
     get activeChart() { return this._activeChart$.getValue(); }
 
@@ -85,36 +84,45 @@ export class SheetsChartUIService extends Disposable {
         this.disposeWithMe(sheetUnit$.subscribe((worksheet) => this._groupChartSettingPanel(worksheet)));
 
         this._sidebarService.sidebarOptions$.subscribe((option) => {
-            if(this.activeChart && this.activeChart.id !== option.id) {
+            if (this.activeChart && this.activeChart.id !== option.id) {
                 this._activeChart$.next(null);
             }
         });
 
-        this._drawingManagerService.focus$.subscribe(drawings => {
+        this._drawingManagerService.focus$.subscribe((drawings) => {
             const { unitId, subUnitId } = getSheetCommandTarget(this._instanceService) || {};
-            if(!unitId || !subUnitId) { return; }
+            if (!unitId || !subUnitId) { return; }
 
             let chartId: string = '';
-            drawings.forEach(drawing => {
+            drawings.forEach((drawing) => {
                 const { unitId: _unitId, subUnitId: _subUnitId, drawingId: _chartId } = drawing;
-                if(unitId !== _unitId || subUnitId !== _subUnitId || !this.getChartRenderModel(_unitId, _subUnitId, _chartId)) { return; }
+                if (unitId !== _unitId || subUnitId !== _subUnitId || !this.getChartRenderModel(_unitId, _subUnitId, _chartId)) { return; }
                 chartId = _chartId;
             });
 
             this.onChartActive(unitId, subUnitId, chartId);
         });
+        this._commandService.onCommandExecuted((command) => {
+            if (command.id === RemoveSheetDrawingCommand.id) {
+                const { drawings } = command.params as IDeleteDrawingCommandParams;
+                drawings.forEach(drawing => {
+                    const { unitId, subUnitId, drawingId: chartId } = drawing;
+                    this._sheetsChartService.getChartModel(unitId, subUnitId)?.setChartSnapshot(chartId);
+                });
+            }
+        });
     }
 
     private onChartActive = (unitId: string, subUnitId: string, chartId?: string) => {
         const orders = this._drawingManagerService.getDrawingOrder(unitId, subUnitId);
-        orders.map(id => document.getElementById(id)?.parentElement?.classList.remove('sheets-chart-ui-active'));
-        if(!chartId) { return; }
+        orders.map((id) => document.getElementById(id)?.parentElement?.classList.remove('sheets-chart-ui-active'));
+        if (!chartId) { return; }
         document.getElementById(chartId)?.parentElement?.classList.add('sheets-chart-ui-active');
-        const id = this._sidebarService.options.id;
-        if(id?.startsWith(`${unitId}-${subUnitId}-`)) {
+        const siderbarOptions = this._sidebarService.options;
+        if (siderbarOptions?.visible && siderbarOptions.id?.startsWith(`${unitId}-${subUnitId}-`)) {
             this.openChartSettingPanel(unitId, subUnitId, chartId);
         }
-    }
+    };
 
     private _groupChartSettingPanel(worksheet: Nullable<Worksheet>) {
         if (!this._sidebarService.visible) { return; }
@@ -181,7 +189,7 @@ export class SheetsChartUIService extends Disposable {
         if (!range) { return; }
         this._highlightDisposable = new DisposableCollection();
         const ranges = Array.isArray(range) ? range : [range];
-        ranges.map(range => {
+        ranges.map((range) => {
             const id = this._markSelectionService.addShape({ range, primary: null })!;
             this._highlightDisposable.add({ dispose: () => id && this._markSelectionService.removeShape(id) });
         });
@@ -200,11 +208,11 @@ export class SheetsChartUIService extends Disposable {
         return { unitId: '', sheetName, range: ranges };
     }
 
-    serializeRangeWithSheet(range: { unitId: string, sheetName: string, range: IChartRange[] }) {
+    serializeRangeWithSheet(range: { unitId: string; sheetName: string; range: IChartRange[] }) {
         const target = getSheetCommandTarget(this._instanceService, { unitId: range.unitId, subUnitId: range.sheetName });
         if (!target) { return ''; }
         const ranges = Array.isArray(range.range) ? range.range : [range.range];
-        const a1Notation = ranges.flatMap(range => {
+        const a1Notation = ranges.flatMap((range) => {
             const a1Notation = target?.worksheet.getRange(range).getA1Notation();
             return a1Notation ? [a1Notation] : [];
         }).join(',');
@@ -242,10 +250,10 @@ export class SheetsChartUIService extends Disposable {
     }
 
     closeChartSettingPanel(unitId?: string, subUnitId?: string, chartId?: string) {
-        if(!this._sidebarService.visible) { return; }
+        if (!this._sidebarService.visible) { return; }
         const _id = [unitId, subUnitId, chartId].filter(Boolean).join('-');
         const id = this._sidebarService.options.id || '';
-        if(!id.startsWith(_id)) { return; }
+        if (!id.startsWith(_id)) { return; }
         this._sidebarService.close(id);
         // if(unitId && subUnitId) { return this.onChartEditActive(unitId, subUnitId); }
         // const target = getSheetCommandTarget(this._instanceService);
