@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { IAccessor, ICommand, IRange } from '@univerjs/core';
+import type { IAccessor, ICommand, IObjectArrayPrimitiveType, IRange, Nullable } from '@univerjs/core';
 
 import {
     CommandType,
@@ -33,6 +33,7 @@ export interface ISetWorksheetColIsAutoWidthCommandParams {
     unitId?: string;
     subUnitId?: string;
     ranges?: IRange[]; // For Facade API
+    currColWidths?: IObjectArrayPrimitiveType<Nullable<number>> | number
 }
 
 export const SetWorksheetColAutoWidthCommand: ICommand = {

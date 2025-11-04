@@ -313,7 +313,7 @@ export const FormulaEditor = forwardRef((props: IFormulaEditorProps, ref: Ref<IF
     };
 
     return (
-        <div className={className}>
+        <div data-u-comp="formula-editor" className={className}>
             <div
                 className={clsx(
                     `

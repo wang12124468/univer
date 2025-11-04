@@ -25,6 +25,7 @@ import type {
     IColAutoWidthInfo,
     IColumnRange,
     IGetRowColByPosOptions,
+    IObjectArrayPrimitiveType,
     IPaddingData,
     IRange,
     IRowAutoHeightInfo,
@@ -490,7 +491,7 @@ export class SpreadsheetSkeleton extends SheetSkeleton {
     //#endregion
 
     //#region calculate auto width
-    calculateAutoWidthInRange(ranges: Nullable<IRange[]>): IColAutoWidthInfo[] {
+    calculateAutoWidthInRange(ranges: Nullable<IRange[]>, currColWidths?: IObjectArrayPrimitiveType<number> | number): IColAutoWidthInfo[] {
         if (!Tools.isArray(ranges)) {
             return [];
         }
@@ -506,7 +507,8 @@ export class SpreadsheetSkeleton extends SheetSkeleton {
                 // If the row has already been calculated, it does not need to be recalculated
                 if (calculatedCols.has(colIndex)) continue;
 
-                const autoWidth = this._calculateColWidth(colIndex);
+                const currColWidth = typeof currColWidths === 'number' ? currColWidths : currColWidths?.[colIndex];
+                const autoWidth = this._calculateColWidth(colIndex, currColWidth);
                 calculatedCols.add(colIndex);
                 results.push({
                     col: colIndex,
@@ -525,7 +527,7 @@ export class SpreadsheetSkeleton extends SheetSkeleton {
      * @returns {number} width
      */
 
-    private _calculateColWidth(colIndex: number): number {
+    private _calculateColWidth(colIndex: number, _currColWidth?: number): number {
         const worksheet = this.worksheet;
 
         // row has default height, but col does not, col can be very narrow near zero
@@ -571,11 +573,7 @@ export class SpreadsheetSkeleton extends SheetSkeleton {
         const checkEndRow = Math.min(rowCount, endRowOfViewMain + MEASURE_EXTENT); // rowCount
         const rowIdxArr = createRowSequence(checkStartRow, checkEndRow, otherRowIndex);
 
-        const preColIndex = Math.max(0, colIndex - 1);
-        let currColWidth = this.columnWidthAccumulation[colIndex] - this.columnWidthAccumulation[preColIndex];
-        if (colIndex === 0) {
-            currColWidth = this.columnWidthAccumulation[colIndex];
-        }
+        const currColWidth = _currColWidth ?? this._getCurrColWidth(colIndex);
 
         for (let i = 0; i < rowIdxArr.length; i++) {
             const row = rowIdxArr[i];
@@ -601,6 +599,16 @@ export class SpreadsheetSkeleton extends SheetSkeleton {
         }
         if (colWidth === 0) return currColWidth; // if column is empty, do not modify colWidth, like Google sheet.
         return Math.max(MIN_COL_WIDTH, colWidth); // min col width is 2
+    }
+
+    private _getCurrColWidth(colIndex: number) {
+        const preColIndex = Math.max(0, colIndex - 1);
+        let currColWidth = this.columnWidthAccumulation[colIndex] - this.columnWidthAccumulation[preColIndex];
+        if (colIndex === 0) {
+            currColWidth = this.columnWidthAccumulation[colIndex];
+        }
+
+        return currColWidth;
     }
 
     getColWidth(colIndex: number) {

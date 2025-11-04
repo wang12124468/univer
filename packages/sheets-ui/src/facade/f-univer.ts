@@ -112,12 +112,12 @@ export class FUniverSheetsUIMixin extends FUniver implements IFUniverSheetsUIMix
                 const editorBridgeService = injector.get(IEditorBridgeService);
                 const params = commandInfo.params as IEditorBridgeServiceVisibleParam;
                 const { visible, keycode, eventType } = params;
-                const loc = editorBridgeService.getEditLocation()!;
+                const loc = editorBridgeService.getEditLocation();
 
                 if (visible) {
                     const eventParams: IBeforeSheetEditStartEventParams = {
-                        row: loc.row,
-                        column: loc.column,
+                        row: loc?.row || 0,
+                        column: loc?.column || 0,
                         eventType,
                         keycode,
                         workbook,
@@ -145,12 +145,12 @@ export class FUniverSheetsUIMixin extends FUniver implements IFUniverSheetsUIMix
                 const univerInstanceService = injector.get(IUniverInstanceService);
                 const params = commandInfo.params as IEditorBridgeServiceVisibleParam;
                 const { visible, keycode, eventType } = params;
-                const loc = editorBridgeService.getEditLocation()!;
+                const loc = editorBridgeService.getEditLocation();
 
                 if (!visible) {
                     const eventParams: IBeforeSheetEditEndEventParams = {
-                        row: loc.row,
-                        column: loc.column,
+                        row: loc?.row || 0,
+                        column: loc?.column || 0,
                         eventType,
                         keycode,
                         workbook,
@@ -179,12 +179,12 @@ export class FUniverSheetsUIMixin extends FUniver implements IFUniverSheetsUIMix
                 const editorBridgeService = injector.get(IEditorBridgeService);
                 const params = commandInfo.params as IEditorBridgeServiceVisibleParam;
                 const { visible, keycode, eventType } = params;
-                const loc = editorBridgeService.getEditLocation()!;
+                const loc = editorBridgeService.getEditLocation();
 
                 if (visible) {
                     const eventParams: ISheetEditStartedEventParams = {
-                        row: loc.row,
-                        column: loc.column,
+                        row: loc?.row || 0,
+                        column: loc?.column || 0,
                         eventType,
                         keycode,
                         workbook,
@@ -208,12 +208,12 @@ export class FUniverSheetsUIMixin extends FUniver implements IFUniverSheetsUIMix
                 const editorBridgeService = injector.get(IEditorBridgeService);
                 const params = commandInfo.params as IEditorBridgeServiceVisibleParam;
                 const { visible, keycode, eventType } = params;
-                const loc = editorBridgeService.getEditLocation()!;
+                const loc = editorBridgeService.getEditLocation();
 
                 if (!visible) {
                     const eventParams: ISheetEditEndedEventParams = {
-                        row: loc.row,
-                        column: loc.column,
+                        row: loc?.row || 0,
+                        column: loc?.column || 0,
                         eventType,
                         keycode,
                         workbook,
@@ -242,7 +242,7 @@ export class FUniverSheetsUIMixin extends FUniver implements IFUniverSheetsUIMix
 
                 const { unitId } = params;
                 if (unitId === DOCS_NORMAL_EDITOR_UNIT_ID_KEY) {
-                    const { row, column } = editorBridgeService.getEditLocation()!;
+                    const { row = 0, column = 0 } = editorBridgeService.getEditLocation() || {};
                     const eventParams: ISheetEditChangingEventParams = {
                         workbook,
                         worksheet,
